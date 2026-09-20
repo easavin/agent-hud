@@ -14,6 +14,8 @@ final class AgentMonitor {
     private(set) var recent: [AgentSnapshot] = []
     private(set) var stats = StatsSnapshot()
     var selectedId: String?
+    /// When the ingest last produced new data, for the header's "last refreshed" line.
+    private(set) var lastRefresh = Date()
 
     private let engine = IngestEngine()
     private let history = HistoryIndex()
@@ -28,6 +30,13 @@ final class AgentMonitor {
     /// The agent worth watching: a looping one first, otherwise whoever burns the most tokens.
     var focus: AgentSnapshot? {
         loopingAgents.first ?? agents.filter(\.activity.isActive).max { $0.tokensPerMinute < $1.tokensPerMinute }
+    }
+
+    /// "a few seconds ago" / "3 min ago" — deliberately vague, like the prototype's copy.
+    var lastRefreshedText: String {
+        let seconds = Date().timeIntervalSince(lastRefresh)
+        if seconds < 45 { return "Last refreshed a few seconds ago" }
+        return "Last refreshed \(Int(seconds / 60)) min ago"
     }
 
     var mood: WidgetMood {
@@ -51,7 +60,7 @@ final class AgentMonitor {
             while !Task.isCancelled {
                 let snapshots = await engine.poll()
                 let live = snapshots.filter { !$0.isEnded }, ended = snapshots.filter(\.isEnded)
-                if self?.agents != live { self?.agents = live }
+                if self?.agents != live { self?.agents = live; self?.lastRefresh = Date() }
                 if self?.recent != ended { self?.recent = ended }
                 try? await Task.sleep(for: .seconds(1))
             }
@@ -62,6 +71,16 @@ final class AgentMonitor {
                 if self?.stats != snapshot { self?.stats = snapshot }
                 try? await Task.sleep(for: .seconds(10))
             }
+        }
+    }
+
+    /// The header's Refresh button: re-index history now instead of waiting for the next pass.
+    func refreshNow() {
+        lastRefresh = Date()
+        guard demo == nil else { return }
+        Task { [history] in
+            let snapshot = await history.refresh()
+            if self.stats != snapshot { self.stats = snapshot }
         }
     }
 

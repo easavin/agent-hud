@@ -4,9 +4,10 @@ A macOS monitor for Claude Code agents: an always-on-top widget (320×320, or 16
 1280×800 mission-control dashboard. It reads `~/.claude/sessions/*.json` and `~/.claude/projects/**/*.jsonl` —
 strictly local, read-only, no network, no API keys.
 
-The interface is a **terminal / TUI**: one monospace face at 12/16 on a character grid, 1px-bordered panes with the
-title sitting on the border, charts made of block characters (`█ ▇ ░ ▁▂▃▄▅▆▇█ ░▒▓█`) and motion that steps cell by
-cell. No gradients, no glow, no rounded chrome.
+The interface is **light product-analytics**: a warm off-white canvas, flat white cards with 1px warm-grey borders,
+dark-ink buttons and segmented controls, and saturated-but-muted semantic colors that clear 4.5:1 on white. Everything
+is vector — node graphs, donut, radar, stacked areas, sparklines, heatmap. No gradients, no glow, no shadows except
+the flow popover's hard 2px offset.
 
 ## Build & run
 
@@ -37,43 +38,46 @@ register with LaunchServices, and then a Dock or `open` launch can start the oth
 - `Packages/HUDCore` — pure logic, unit-tested (`swift test`): transcript parsing, incremental tailing, per-session state
   (activity, turn steps, loops, plan progress, context "brain"), history index + cost estimate. `swift run hudctl [stats]`
   prints what the HUD sees.
-- `AgentHUD/Views/Terminal/` — the whole UI.
-  - `Term.swift` — design tokens, the monospace metrics, `TermRow`/`TermText` (a line of the grid), `TermPane`, `TermList`.
-  - `TerminalDashboard.swift` — the 1280×800 frame, header line and keyboard; `AgentsPane`, `LanesPane`, `StatsPane`,
-    `ThoughtsPane` are the other three corners of it.
-  - `FlowTree.swift` + `FlowPane.swift` — a turn rendered as an ASCII tree (dashed subagent branches, box returns for
-    retry loops); `HeroPanes.swift` — the brain, loops and files tabs.
-  - `TerminalWidget.swift`, `DockTileView.swift` — the 320/160 widgets and the live Dock tile.
-- `design_handoff_agent_hud_terminal/` — the Claude Design handoff this UI is built from (frame `3a`).
-  `design_handoff_agent_hud/` — the previous neon handoff, kept for the behavior frames (1e / 2a).
-  `docs/design-prompt.md` — the prompt that produced the first one.
+- `AgentHUD/Views/Light/` — the whole UI.
+  - `Theme.swift` — design tokens, type, radii; `Components.swift` — `Card`, `CardHeader`, `Segmented`,
+    `ToolbarButton`, `ModelBadge`, `BarTrack`, `Sparkline`, `ProgressRing` and the `Geometry` helpers.
+  - `DashboardView.swift` — the 1280×800 frame, header, metrics strip, body grid, thought stream and the keyboard.
+  - `FlowLayout.swift` turns a turn's steps into positioned nodes and edges; `FlowGraphView.swift` draws them
+    (Bézier edges, cracked error nodes, file chips, loop pill, popover, particles).
+  - `HeroTabs.swift` — the brain graph with its context-window bar, the loop radar, the files list.
+  - `AgentCard.swift`, `LanesPanel.swift`, `StatsRail.swift`, `WidgetView.swift`, `DockTileView.swift`.
+- `design_handoff_agent_hud_light/` — the Claude Design handoff this UI is built from (frame `3b`).
+  `design_handoff_agent_hud_terminal/` (frame `3a`) and `design_handoff_agent_hud/` (the original neon frames, still
+  the behavior reference for 1e / 2a) are the earlier directions. `docs/design-prompt.md` — the prompt behind the first.
 
-## Two rules the UI is built on
+## How the drawing is organised
 
-**The character grid.** A line is a `TermRow`: runs of text with a color, built with `Term.pad` / `Term.padStart` so
-columns line up by padding rather than pixel offsets. It renders as a single `Text` backed by an `AttributedString`,
-which keeps every space exactly where it was put. Lane cells come from cumulative boundaries
-(`end = round(t / 60min × 90)`) so every row is exactly 90 cells wide.
+Anything with a shape of its own is a `Canvas`: the flow graph, the brain graph, the loop radar, the lanes, the
+stacked-area burn chart, the donut and the heatmap. Cards, controls and text stay ordinary SwiftUI so they hit-test
+and truncate properly. `FlowLayout` is pure geometry with no SwiftUI in it, which keeps node placement, loop
+compression and subagent attachment testable on their own.
 
-**Stepped motion, and not much of it.** Everything that moves is a `TimelineView` over one or two lines of text —
-particles (130 ms), the live dot and the thought cursor (1 s), lanes (1 s). Nothing tweens, nothing glows, and no
-timer drives a pane bigger than the line it animates; measured with `top`, the app sits around 1% with the dashboard
-open and a live session. Reduce Motion stops the particles and the blinks and leaves the data updating.
+Motion is calm and scoped. The flow graph splits into a static layer (edges, nodes, labels — redrawn only when the
+turn changes) and a motion layer that runs at 15 fps only while a tool is in flight: three 4px dots down the live
+edge, and the error node's ring alternating every 800 ms while a loop is open. Lanes redraw once a second. Reduce
+Motion drops both layers to their resting frame and leaves the data updating.
 
-The font is JetBrains Mono when it is installed and **Menlo** otherwise — not SF Mono, which has no `◐ ⌕ ✎ ✕ ◌` and
-would fall back to a proportional face and break the grid.
+Type is **IBM Plex Sans** when it is installed and the system face otherwise; code, commands and the thought stream
+use **JetBrains Mono**, falling back to SF Mono. Neither font is bundled yet.
 
 ## Notes
 
 - Finished sessions stay in the dashboard's **Recent** list for 3 days (`IngestEngine.historyWindow`, max 8) and remain fully
   browsable. The widget, Dock tile and counters only ever count live sessions.
-- Subagent nodes branch off the flow tree with a dashed `╌╌▶`, carry the tokens the subagent spent and merge back into the
-  line below with a `┐ … ┘` return. Source: `<session>/subagents/agent-*.jsonl` + `.meta.json`.
-- The tree nests one level per round of tool calls and stops at depth 4 (`FlowTree.maxDepth`); real turns run twenty
-  rounds deep and would otherwise march off the right edge.
+- Subagent nodes are dashed teal circles carrying the agent type, the model that actually ran and its tokens.
+  Source: `<session>/subagents/agent-*.jsonl` + `.meta.json`.
+- A turn longer than the canvas drops middle columns and says so (`⋯ +47 steps`); retries collapse to the latest
+  iteration with a red `×N` pill on the loop edge.
 - The Dock tile is an Activity Monitor-style history: output tokens per 10 s over 5 min, stacked, one color per agent.
-- Keys: `↑ ↓` select a session · `f` `b` `l` `s` switch the hero pane · `p` blurs the thoughts · `1` `2` `7` set the
-  burn range. Clicking works everywhere too, and hovering a lane cell reports it in the pane title.
+- Keys: `↑ ↓` select a session · `f` `b` `l` `s` switch the hero tab · `p` blurs the thoughts · `1` `2` `7` set the
+  burn range. Clicking a node opens its popover; the header's range button cycles the lane window.
+- No **Interrupt** button, although the handoff lists one on the Loops tab: the app is strictly read-only and has no
+  business killing someone's session.
 
 - The **Files** tab merges two sources: Read/Edit/Write calls from the transcript (intent, line counts) and a scan of the
   session's working directory for files modified since the session began (catches shell-made changes; drawn dashed).

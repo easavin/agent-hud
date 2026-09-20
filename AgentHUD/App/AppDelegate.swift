@@ -107,8 +107,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isMovableByWindowBackground = true
-        window.backgroundColor = NSColor(red: 11 / 255, green: 13 / 255, blue: 16 / 255, alpha: 1)
-        window.appearance = NSAppearance(named: .darkAqua)
+        window.backgroundColor = NSColor(red: 244 / 255, green: 243 / 255, blue: 238 / 255, alpha: 1)
+        window.appearance = NSAppearance(named: .aqua)
         window.contentAspectRatio = DashboardView.designSize
         window.contentMinSize = CGSize(width: 960, height: 600)
         window.isReleasedWhenClosed = false

@@ -29,7 +29,7 @@ enum SnapshotRenderer {
 
     /// The live widget uses Core Animation twins that ImageRenderer cannot see; render their layer tree directly.
     private static func saveLayers(monitor: AgentMonitor, _ url: URL) {
-        let host = NSHostingView(rootView: CompactWidgetView(monitor: monitor).environment(\.colorScheme, .dark))
+        let host = NSHostingView(rootView: CompactWidgetView(monitor: monitor).environment(\.colorScheme, .light))
         host.frame = CGRect(x: 0, y: 0, width: 320, height: 320)
         let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = host
@@ -41,7 +41,7 @@ enum SnapshotRenderer {
     }
 
     private static func save(_ view: some View, _ size: CGSize, _ url: URL) {
-        let renderer = ImageRenderer(content: view.frame(width: size.width, height: size.height).environment(\.colorScheme, .dark).environment(\.staticRendering, true))
+        let renderer = ImageRenderer(content: view.frame(width: size.width, height: size.height).environment(\.colorScheme, .light).environment(\.staticRendering, true))
         renderer.scale = 2
         guard let image = renderer.cgImage else { return print("render failed: \(url.lastPathComponent)") }
         let bitmap = NSBitmapImageRep(cgImage: image)

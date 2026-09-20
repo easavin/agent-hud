@@ -1,13 +1,13 @@
 import HUDCore
 import SwiftUI
 
-/// App icon and live Dock tile: a flat terminal square with a block-bar history of output tokens
-/// over the last five minutes, one color per session — Activity Monitor's CPU meter in this palette.
+/// App icon and live Dock tile: a white card carrying the ink "A", tok/min and a stacked history of
+/// output tokens over the last five minutes — Activity Monitor's CPU meter in this palette.
 struct DockTileView: View {
     let monitor: AgentMonitor
     static let bars = 30
     /// One fixed color per session slot, so a bar keeps its color as it scrolls left.
-    static let palette = [Term.running, Term.reading, Term.editing, Term.thinking, Term.subagent]
+    static let palette = [Theme.reading, Theme.editing, Theme.thinking, Theme.running, Theme.subagent]
 
     var body: some View {
         GeometryReader { proxy in
@@ -16,22 +16,24 @@ struct DockTileView: View {
             let body = side * 0.9, unit = body / 100
             let alert = monitor.mood == .alert
             ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: body * 0.18, style: .continuous).fill(Term.bg)
+                RoundedRectangle(cornerRadius: body * 0.18, style: .continuous).fill(Theme.card)
                 Canvas { context, size in draw(&context, size: size, unit: unit) }
-                    .padding(.horizontal, 9 * unit).padding(.top, 30 * unit).padding(.bottom, 10 * unit)
-                HStack(alignment: .firstTextBaseline, spacing: 3 * unit) {
+                    .padding(.horizontal, 9 * unit).padding(.top, 34 * unit).padding(.bottom, 10 * unit)
+                HStack(alignment: .center, spacing: 5 * unit) {
+                    RoundedRectangle(cornerRadius: 4 * unit, style: .continuous)
+                        .fill(alert ? Theme.error : Theme.ink)
+                        .frame(width: 16 * unit, height: 16 * unit)
+                        .overlay(Text("A").font(.system(size: 10 * unit, weight: .bold)).foregroundStyle(.white))
                     Text(monitor.agents.isEmpty ? "—" : monitor.tokensPerMinute.compact)
-                        .font(.custom(Term.fontName, fixedSize: 17 * unit).weight(.bold))
-                        .foregroundStyle(alert ? Term.error : Term.ink)
-                    Text("t/m").font(.custom(Term.fontName, fixedSize: 9 * unit)).foregroundStyle(Term.mute)
+                        .font(.system(size: 15 * unit, weight: .semibold)).monospacedDigit()
+                        .foregroundStyle(Theme.ink)
+                    Text("t/m").font(.system(size: 9 * unit, weight: .medium)).foregroundStyle(Theme.mute)
                     Spacer(minLength: 0)
-                    Rectangle().fill(alert ? Term.error : monitor.activeCount > 0 ? Term.running : Term.waiting)
-                        .frame(width: 7 * unit, height: 7 * unit)
                 }
                 .lineLimit(1).minimumScaleFactor(0.6)
-                .padding(.horizontal, 10 * unit).padding(.top, 8 * unit)
+                .padding(.horizontal, 10 * unit).padding(.top, 9 * unit)
                 RoundedRectangle(cornerRadius: body * 0.18, style: .continuous)
-                    .strokeBorder(alert ? Term.error : Term.border, lineWidth: max(1, 1.2 * unit))
+                    .strokeBorder(alert ? Theme.error : Theme.border, lineWidth: max(1, 1.2 * unit))
             }
             .frame(width: body, height: body)
             .frame(width: proxy.size.width, height: proxy.size.height)
@@ -59,7 +61,7 @@ struct DockTileView: View {
                 context.fill(Path(CGRect(x: x, y: max(0, y), width: width, height: height)), with: .color(Self.palette[index]))
             }
             if totals[bar] == 0 {
-                context.fill(Path(CGRect(x: x, y: size.height - 1.2 * unit, width: width, height: 1.2 * unit)), with: .color(Term.border))
+                context.fill(Path(CGRect(x: x, y: size.height - 1.2 * unit, width: width, height: 1.2 * unit)), with: .color(Theme.divider))
             }
         }
     }
