@@ -47,7 +47,10 @@ public actor IngestEngine {
             tracked[entry.sessionId]?.endedAt = nil
         }
         for id in tracked.keys where !liveIds.contains(id) && tracked[id]?.endedAt == nil {
-            tracked[id]?.endedAt = tracked[id]?.state.lastEventAt ?? now
+            // Read before writing: an optional-chained assignment holds a modify access on
+            // `tracked` while its right-hand side runs, so reading it there is an exclusivity trap.
+            let lastEvent = tracked[id]?.state.lastEventAt
+            tracked[id]?.endedAt = lastEvent ?? now
         }
         loadNextFromBacklog(excluding: liveIds, now: now)
         tracked = tracked.filter { $0.value.endedAt.map { now.timeIntervalSince($0) < Self.historyWindow } ?? true }

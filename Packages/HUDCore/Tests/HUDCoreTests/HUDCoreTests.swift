@@ -314,4 +314,38 @@ private func events(_ lines: [String]) -> [TranscriptEvent] {
         let later = await engine.poll(now: now.addingTimeInterval(IngestEngine.historyWindow + 60))
         #expect(later.isEmpty, "history expires")
     }
+
+    /// A live session that disappears from the registry is the path that used to trap on
+    /// overlapping access to `tracked` (Abort trap 6 in `poll`), so poll across that transition.
+    @Test func marksLiveSessionEndedWhenRegistryEntryDisappears() async throws {
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent("hud-end-\(UUID().uuidString)")
+        let project = home.appendingPathComponent("projects/-x-repo")
+        let sessions = home.appendingPathComponent("sessions")
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: sessions, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: home) }
+
+        let now = Date()
+        let stamp = Date.ISO8601FormatStyle(includingFractionalSeconds: true).format(now.addingTimeInterval(-60))
+        let line = assistantLine(messageId: "m1", output: 40, block: #"{"type":"text","text":"hi"}"#, timestamp: stamp)
+            .replacingOccurrences(of: #""gitBranch":"main""#, with: #""gitBranch":"main","cwd":"/x/repo""#)
+        try Data((line + "\n").utf8).write(to: project.appendingPathComponent("sess-end.jsonl"))
+
+        // Our own pid, so the registry sees the session as alive.
+        let entry = sessions.appendingPathComponent("\(getpid()).json")
+        let started = (now.addingTimeInterval(-60).timeIntervalSince1970 * 1000).rounded()
+        try Data(#"{"pid":\#(getpid()),"sessionId":"sess-end","cwd":"/x/repo","status":"busy","startedAt":\#(started)}"#.utf8)
+            .write(to: entry)
+
+        let engine = IngestEngine(claudeHome: home)
+        let live = await engine.poll(now: now)
+        #expect(live.contains { $0.sessionId == "sess-end" && !$0.isEnded })
+
+        // The session exits: its registry file goes away while the engine still tracks it.
+        try FileManager.default.removeItem(at: entry)
+        let after = await engine.poll(now: now.addingTimeInterval(1))
+        let ended = try #require(after.first { $0.sessionId == "sess-end" })
+        #expect(ended.isEnded)
+        #expect(ended.endedAt != nil)
+    }
 }
