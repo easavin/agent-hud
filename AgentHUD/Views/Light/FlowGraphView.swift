@@ -9,10 +9,16 @@ struct FlowGraphView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        let layout = FlowLayout(steps: agent.steps, subagents: agent.subagents)
+        GeometryReader { proxy in
+            graph(in: CGSize(width: max(360, proxy.size.width), height: max(180, proxy.size.height)))
+        }
+    }
+
+    private func graph(in size: CGSize) -> some View {
+        let layout = FlowLayout(steps: agent.steps, subagents: agent.subagents, size: size)
         let selected = layout.nodes.first { $0.id == selectedId }
             ?? layout.nodes.last { $0.style == .error && $0.loopCount >= 2 }
-        ZStack(alignment: .topLeading) {
+        return ZStack(alignment: .topLeading) {
             // Static layer: edges, nodes, glyphs, labels, chips. Redrawn only when the turn changes.
             Canvas { context, _ in draw(layout, in: &context, selectedId: selected?.id) }
             // Motion layer: particles down the live edge and the looping error ring.
@@ -26,11 +32,11 @@ struct FlowGraphView: View {
             if layout.nodes.isEmpty {
                 Text("Waiting for the first prompt")
                     .font(Theme.ui(13)).foregroundStyle(Theme.mute)
-                    .frame(width: FlowLayout.canvas.width, height: FlowLayout.canvas.height)
+                    .frame(width: size.width, height: size.height)
             }
-            if let selected { NodePopover(node: selected).position(popoverPosition(for: selected)) }
+            if let selected { NodePopover(node: selected).position(popoverPosition(for: selected, in: size)) }
         }
-        .frame(width: FlowLayout.canvas.width, height: FlowLayout.canvas.height)
+        .frame(width: size.width, height: size.height)
         .contentShape(Rectangle())
         .gesture(SpatialTapGesture().onEnded { tap in
             let hit = layout.nodes.first { hypot($0.center.x - tap.location.x, $0.center.y - tap.location.y) <= $0.radius + 8 }
@@ -44,9 +50,9 @@ struct FlowGraphView: View {
     }
 
     /// The popover sits under the node, or above it when the node hangs low on the canvas.
-    private func popoverPosition(for node: FlowLayout.Node) -> CGPoint {
-        let x = min(max(node.center.x, 120), FlowLayout.canvas.width - 120)
-        let below = node.center.y < 170
+    private func popoverPosition(for node: FlowLayout.Node, in size: CGSize) -> CGPoint {
+        let x = min(max(node.center.x, 120), max(120, size.width - 120))
+        let below = node.center.y < size.height * 0.56
         return CGPoint(x: x, y: below ? node.center.y + node.radius + 78 : node.center.y - node.radius - 62)
     }
 
@@ -126,15 +132,16 @@ struct FlowGraphView: View {
         }
     }
 
-    /// The loop edge dives below the row and carries a solid red pill with the iteration count.
+    /// The loop edge arcs over the row with a solid red pill carrying the iteration count. The handoff
+    /// draws it below, but below the nodes is where the labels and the popover live.
     private func loopGeometry(_ loop: FlowLayout.LoopEdge, nodes: [FlowLayout.Node]) -> (path: Path, apex: CGPoint) {
         let from = nodes[loop.from].center, to = nodes[loop.to].center
-        let drop = max(from.y, to.y) + 46
-        let apex = CGPoint(x: (from.x + to.x) / 2, y: drop - 8)
+        let rise = max(18, min(from.y, to.y) - 52)
+        let apex = CGPoint(x: (from.x + to.x) / 2, y: rise + 6)
         var path = Path()
-        path.move(to: CGPoint(x: from.x, y: from.y + nodes[loop.from].radius))
-        path.addCurve(to: CGPoint(x: to.x, y: to.y + nodes[loop.to].radius),
-                      control1: CGPoint(x: from.x, y: drop), control2: CGPoint(x: to.x, y: drop))
+        path.move(to: CGPoint(x: from.x, y: from.y - nodes[loop.from].radius))
+        path.addCurve(to: CGPoint(x: to.x, y: to.y - nodes[loop.to].radius),
+                      control1: CGPoint(x: from.x, y: rise), control2: CGPoint(x: to.x, y: rise))
         return (path, apex)
     }
 

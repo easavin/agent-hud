@@ -21,6 +21,9 @@ enum SnapshotRenderer {
             for tab in HeroTab.allCases {
                 save(DashboardView(monitor: monitor, initialTab: tab), DashboardView.designSize, directory.appendingPathComponent("dashboard-\(tab.rawValue)-\(tag).png"))
             }
+            // The dashboard reflows rather than scaling, so it is worth seeing both ends of its range.
+            save(DashboardView(monitor: monitor), CGSize(width: 1040, height: 640), directory.appendingPathComponent("dashboard-narrow-\(tag).png"))
+            save(DashboardView(monitor: monitor), CGSize(width: 1680, height: 1000), directory.appendingPathComponent("dashboard-wide-\(tag).png"))
             save(DockTileView(monitor: monitor), CGSize(width: 512, height: 512), directory.appendingPathComponent("icon-\(tag).png"))
             saveLayers(monitor: monitor, directory.appendingPathComponent("reactor-layer-\(tag).png"))
             NSApp.terminate(nil)

@@ -245,3 +245,63 @@ extension GraphicsContext {
         draw(Text(Image(systemName: name)).font(.system(size: size, weight: .semibold)).foregroundStyle(color), at: point)
     }
 }
+
+// MARK: - Splitters
+
+/// A draggable border between two panes. It lives in the 12px gap the grid already has, shows a
+/// handle on hover and swaps the cursor, so the layout reads unchanged until you reach for it.
+struct Splitter: View {
+    enum Axis { case vertical, horizontal }
+
+    let axis: Axis
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+    /// -1 when dragging right (or down) should shrink the bound pane rather than grow it.
+    var sign: Double = 1
+    static let thickness: CGFloat = 12
+
+    @State private var start: Double?
+    @State private var hovering = false
+    @State private var pushedCursor = false
+
+    var body: some View {
+        ZStack {
+            Color.clear
+            Capsule()
+                .fill(Theme.borderStrong)
+                .frame(width: axis == .vertical ? 3 : 28, height: axis == .vertical ? 28 : 3)
+                .opacity(hovering || start != nil ? 1 : 0)
+        }
+        .frame(width: axis == .vertical ? Self.thickness : nil,
+               height: axis == .horizontal ? Self.thickness : nil)
+        .frame(maxWidth: axis == .horizontal ? .infinity : nil,
+               maxHeight: axis == .vertical ? .infinity : nil)
+        .contentShape(Rectangle())
+        .onHover { inside in
+            hovering = inside
+            setCursor(inside)
+        }
+        .gesture(
+            DragGesture(minimumDistance: 1)
+                .onChanged { drag in
+                    let base = start ?? value
+                    if start == nil { start = base }
+                    let delta = axis == .vertical ? drag.translation.width : drag.translation.height
+                    value = min(max(base + sign * delta, range.lowerBound), range.upperBound)
+                }
+                .onEnded { _ in start = nil }
+        )
+        .animation(.easeOut(duration: 0.12), value: hovering)
+    }
+
+    /// Push and pop exactly once each, or the cursor stack drifts as the pointer crosses splitters.
+    private func setCursor(_ inside: Bool) {
+        if inside, !pushedCursor {
+            (axis == .vertical ? NSCursor.resizeLeftRight : NSCursor.resizeUpDown).push()
+            pushedCursor = true
+        } else if !inside, pushedCursor {
+            NSCursor.pop()
+            pushedCursor = false
+        }
+    }
+}

@@ -41,10 +41,15 @@ struct FlowLayout {
     static let canvas = CGSize(width: 688, height: 300)
     static let pitch: CGFloat = 84
     static let firstX: CGFloat = 36
-    static let midY: CGFloat = 140
     static let maxPerColumn = 4
 
-    init(steps: [TurnStep], subagents: [SubagentInfo] = [], width: CGFloat = FlowLayout.canvas.width) {
+    /// The canvas this layout was built for; a wider pane simply fits more columns.
+    private(set) var size = FlowLayout.canvas
+    var midY: CGFloat { size.height * 0.47 }
+
+    init(steps: [TurnStep], subagents: [SubagentInfo] = [], size: CGSize = FlowLayout.canvas) {
+        self.size = size
+        let width = size.width
         let spawned = Dictionary(subagents.map { ($0.toolUseId, $0) }, uniquingKeysWith: { first, _ in first })
         let compressed = Self.compressLoops(steps)
         var columns = Self.columns(from: compressed.steps)
@@ -57,10 +62,10 @@ struct FlowLayout {
         var columnNodes: [[Int]] = []
         for (columnIndex, column) in columns.enumerated() {
             let shown = Array(column.prefix(Self.maxPerColumn))
-            let spacing = min(56, 230 / CGFloat(max(1, shown.count)))
+            let spacing = min(56, (size.height - 70) / CGFloat(max(1, shown.count)))
             var indices: [Int] = []
             for (row, entry) in shown.enumerated() {
-                let y = Self.midY + (CGFloat(row) - CGFloat(shown.count - 1) / 2) * spacing
+                let y = midY + (CGFloat(row) - CGFloat(shown.count - 1) / 2) * spacing
                 var node = Self.node(for: entry, at: CGPoint(x: Self.firstX + CGFloat(columnIndex) * Self.pitch, y: y))
                 if row == Self.maxPerColumn - 1, column.count > shown.count { node.sub = "+\(column.count - shown.count) more" }
                 node.loopCount = compressed.loopCounts[entry.step.id] ?? 0

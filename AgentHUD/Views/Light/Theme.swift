@@ -157,9 +157,10 @@ extension Date {
 }
 
 extension TimeInterval {
-    /// 2520 → "42m", 9060 → "2h 31m".
+    /// 2520 → "42m", 9060 → "2h 31m". Clamped: a clock skew between two log lines should not
+    /// produce "-49m" on a card.
     var elapsedText: String {
-        let minutes = Int(self / 60)
+        let minutes = max(0, Int(self / 60))
         return minutes < 60 ? "\(minutes)m" : "\(minutes / 60)h \(String(format: "%02d", minutes % 60))m"
     }
 

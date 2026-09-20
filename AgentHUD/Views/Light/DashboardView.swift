@@ -11,10 +11,8 @@ enum HeroTab: String, CaseIterable {
 
 /// Frame 3b — the 1280×800 light product-analytics dashboard, laid out at design size and scaled to the window.
 struct DashboardView: View {
+    /// The window opens at the handoff's size; every pane is resizable from there.
     static let designSize = CGSize(width: 1280, height: 800)
-    static let railWidth: CGFloat = 264
-    static let statsWidth: CGFloat = 280
-    static let bodyHeight: CGFloat = 592
 
     let monitor: AgentMonitor
     @State private var heroTab: HeroTab
@@ -22,6 +20,11 @@ struct DashboardView: View {
     @State private var laneRange: LaneRange = .hour
     @State private var activeOnly = false
     @AppStorage("blurThoughts") private var blurThoughts = false
+    // Pane sizes are draggable and persist. The defaults are the handoff's grid at 1280×800.
+    @AppStorage("railWidth") private var railWidth = 264.0
+    @AppStorage("statsWidth") private var statsWidth = 280.0
+    @AppStorage("heroHeight") private var heroHeight = 356.0
+    @AppStorage("streamHeight") private var streamHeight = 96.0
     @FocusState private var focused: Bool
 
     init(monitor: AgentMonitor, initialTab: HeroTab = .flow) {
@@ -36,14 +39,8 @@ struct DashboardView: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            let scale = min(proxy.size.width / Self.designSize.width, proxy.size.height / Self.designSize.height)
-            content
-                .frame(width: Self.designSize.width, height: Self.designSize.height)
-                .scaleEffect(scale)
-                .frame(width: proxy.size.width, height: proxy.size.height)
-        }
-        .background(Theme.canvas)
+        GeometryReader { proxy in content(in: proxy.size) }
+            .background(Theme.canvas)
         .ignoresSafeArea()
         .focusable()
         .focusEffectDisabled()
@@ -52,13 +49,19 @@ struct DashboardView: View {
         .onKeyPress { press in handle(press) }
     }
 
-    private var content: some View {
-        VStack(spacing: 0) {
+    private func content(in size: CGSize) -> some View {
+        // What is left for the body once the chrome, the stream and its splitter are taken out.
+        let chrome = 52 + 34 + Splitter.thickness + 10.0
+        let stream = min(max(streamHeight, 60), max(60, size.height - chrome - 220))
+        return VStack(spacing: 0) {
             header
             metrics
-            body(width: Self.designSize.width)
+            body(in: CGSize(width: size.width, height: max(220, size.height - chrome - stream)))
+            Splitter(axis: .horizontal, value: $streamHeight,
+                     range: 60...max(60, size.height - chrome - 220), sign: -1)
+                .padding(.horizontal, 16)
             ThoughtStream(agents: rows, blur: $blurThoughts)
-                .frame(height: 96)
+                .frame(height: stream)
                 .padding(.horizontal, 16).padding(.bottom, 10)
         }
         .background(Theme.canvas)
@@ -118,10 +121,22 @@ struct DashboardView: View {
 
     // MARK: Body
 
-    private func body(width: CGFloat) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+    private func body(in size: CGSize) -> some View {
+        // Each column keeps at least enough width to stay legible; the centre takes the remainder.
+        let inner = size.width - 32 - Splitter.thickness * 2
+        let rail = min(max(railWidth, 190), max(190, inner - 360 - 250))
+        let stats = min(max(statsWidth, 250), max(250, inner - rail - 360))
+        let bodyHeight = size.height - 16
+        let hero = min(max(heroHeight, 200), max(200, bodyHeight - Splitter.thickness - 150))
+        // A window of cards rather than a scroll view: ImageRenderer cannot draw a ScrollView, so
+        // snapshots would come back blank. ↑/↓ moves the window instead.
+        let cardPitch = AgentCard.height + 8
+        let visible = max(1, Int((bodyHeight + 8) / cardPitch))
+        let selectedIndex = rows.firstIndex { $0.id == monitor.selected?.id } ?? 0
+        let start = max(0, min(max(0, rows.count - visible), selectedIndex - visible + 1))
+        return HStack(alignment: .top, spacing: 0) {
             VStack(spacing: 8) {
-                ForEach(rows.prefix(5)) { agent in
+                ForEach(Array(rows.dropFirst(start).prefix(visible))) { agent in
                     AgentCard(agent: agent, selected: agent.id == monitor.selected?.id)
                         .contentShape(Rectangle())
                         .onTapGesture { monitor.selectedId = agent.id }
@@ -131,22 +146,37 @@ struct DashboardView: View {
                         Text("No sessions — start one with `claude`")
                             .font(Theme.ui(12)).foregroundStyle(Theme.mute)
                     }
-                    .frame(height: 112)
+                    .frame(height: AgentCard.height)
+                }
+                if rows.count > visible {
+                    Text("+\(rows.count - visible) more · ↑↓")
+                        .font(Theme.ui(11)).foregroundStyle(Theme.mute)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 Spacer(minLength: 0)
             }
-            .frame(width: Self.railWidth)
+            .frame(width: rail)
 
-            VStack(spacing: 12) {
-                heroCard.frame(height: 356)
-                LanesPanel(agents: rows, range: $laneRange).frame(height: 224)
+            Splitter(axis: .vertical, value: $railWidth, range: 190...max(190, inner - 360 - 250))
+
+            VStack(spacing: 0) {
+                heroCard.frame(height: hero)
+                Splitter(axis: .horizontal, value: $heroHeight,
+                         range: 200...max(200, bodyHeight - Splitter.thickness - 150))
+                LanesPanel(agents: rows, range: $laneRange).frame(maxHeight: .infinity)
             }
             .frame(maxWidth: .infinity)
 
-            StatsRail(monitor: monitor, burnRange: $burnRange).frame(width: Self.statsWidth)
+            Splitter(axis: .vertical, value: $statsWidth,
+                     range: 250...max(250, inner - rail - 360), sign: -1)
+
+            StatsRail(monitor: monitor, burnRange: $burnRange)
+                .frame(width: stats, height: bodyHeight, alignment: .top)
+                .clipped()
         }
         .padding(.horizontal, 16).padding(.vertical, 8)
-        .frame(height: Self.bodyHeight, alignment: .top)
+        .frame(height: size.height, alignment: .top)
+        .clipped()
     }
 
     private var heroCard: some View {
@@ -165,13 +195,11 @@ struct DashboardView: View {
                         }
                     } else {
                         Text("No session selected").font(Theme.ui(13)).foregroundStyle(Theme.mute)
-                            .frame(width: FlowLayout.canvas.width, height: FlowLayout.canvas.height)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
-                // The 688pt canvas is drawn at 96%, exactly as the prototype scales it into the card.
-                .scaleEffect(0.96, anchor: .topLeading)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(.top, 8)
+                .padding(.top, 4)
                 .clipped()
             }
         }

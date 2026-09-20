@@ -13,9 +13,9 @@ struct LanesPanel: View {
     @Binding var range: LaneRange
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    static let trackX: CGFloat = 96, trackWidth: CGFloat = 560, rowHeight: CGFloat = 28
-    static let playheadX: CGFloat = 658
-    static let canvas = CGSize(width: 688, height: 170)
+    static let trackX: CGFloat = 96, rowHeight: CGFloat = 28
+    /// Room kept to the right of the track for the playhead and its label.
+    static let tailWidth: CGFloat = 32
 
     var body: some View {
         Card(padding: 0) {
@@ -23,46 +23,48 @@ struct LanesPanel: View {
                 CardHeader(title: "Activity", suffix: range.title) {
                     Segmented(options: LaneRange.allCases.map { ($0.label, $0) }, selection: $range)
                 }
-                // A redraw a second is plenty: 560px cover at least 15 minutes.
+                // A redraw a second keeps the lane scroll honest without costing anything.
                 TimelineView(.periodic(from: .now, by: reduceMotion ? 60 : 1)) { timeline in
-                    Canvas { context, _ in draw(&context, now: timeline.date) }
-                        .frame(width: Self.canvas.width, height: Self.canvas.height)
+                    Canvas { context, size in draw(&context, size: size, now: timeline.date) }
                 }
-                .padding(.leading, 8).padding(.top, 4)
+                .padding(.leading, 8).padding(.trailing, 4).padding(.top, 4)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .clipped()
             }
         }
     }
 
-    private func draw(_ context: inout GraphicsContext, now: Date) {
+    private func draw(_ context: inout GraphicsContext, size: CGSize, now: Date) {
         let window = TimeInterval(range.rawValue * 60)
         let start = now.addingTimeInterval(-window)
+        let trackWidth = max(120, size.width - Self.trackX - Self.tailWidth)
+        let playheadX = Self.trackX + trackWidth + 2
         func x(_ date: Date) -> CGFloat {
-            Self.trackX + Self.trackWidth * max(0, min(1, date.timeIntervalSince(start) / window))
+            Self.trackX + trackWidth * max(0, min(1, date.timeIntervalSince(start) / window))
         }
-        let rows = Array(agents.prefix(5))
-        let gridBottom: CGFloat = 146
+        // As many lanes as the pane has room for, once the axis has its 24px.
+        let rows = Array(agents.prefix(max(1, Int((size.height - 26) / Self.rowHeight))))
+        let gridBottom = max(20, CGFloat(rows.count) * Self.rowHeight + 6)
 
         // Dashed gridlines at each quarter of the window, labelled below the lanes.
         for quarter in 1..<4 {
-            let gx = Self.trackX + Self.trackWidth * CGFloat(quarter) / 4
+            let gx = Self.trackX + trackWidth * CGFloat(quarter) / 4
             var line = Path()
             line.move(to: CGPoint(x: gx, y: 0)); line.addLine(to: CGPoint(x: gx, y: gridBottom))
             context.stroke(line, with: .color(Theme.divider), style: StrokeStyle(lineWidth: 1, dash: [2, 3]))
         }
         for quarter in 0..<4 {
-            let gx = Self.trackX + Self.trackWidth * CGFloat(quarter) / 4
+            let gx = Self.trackX + trackWidth * CGFloat(quarter) / 4
             let minutes = range.rawValue * (4 - quarter) / 4
             context.label(minutes >= 120 ? "-\(minutes / 60)h" : "-\(minutes)m",
-                          at: CGPoint(x: gx, y: 154), size: 10, color: Theme.mute)
+                          at: CGPoint(x: gx, y: gridBottom + 8), size: 10, color: Theme.mute)
         }
 
         for (row, agent) in rows.enumerated() {
             let top = CGFloat(row) * Self.rowHeight + 6
             context.label(String(agent.repo.prefix(13)), at: CGPoint(x: 0, y: top + 8), size: 12, weight: .medium,
                           color: Theme.ink, anchor: .leading)
-            context.fill(Path(roundedRect: CGRect(x: Self.trackX, y: top, width: Self.trackWidth, height: 16),
+            context.fill(Path(roundedRect: CGRect(x: Self.trackX, y: top, width: trackWidth, height: 16),
                               cornerRadius: Theme.Radius.laneTrack), with: .color(Theme.track))
             for segment in agent.lanes {
                 // A finished session's last segment stops when the session did, not at the playhead.
@@ -79,12 +81,12 @@ struct LanesPanel: View {
         }
 
         var playhead = Path()
-        playhead.move(to: CGPoint(x: Self.playheadX, y: 0)); playhead.addLine(to: CGPoint(x: Self.playheadX, y: gridBottom))
+        playhead.move(to: CGPoint(x: playheadX, y: 0)); playhead.addLine(to: CGPoint(x: playheadX, y: gridBottom))
         context.stroke(playhead, with: .color(Theme.ink), lineWidth: 2)
-        context.label("now", at: CGPoint(x: Self.playheadX, y: 154), size: 10, weight: .semibold, color: Theme.ink)
+        context.label("now", at: CGPoint(x: playheadX, y: gridBottom + 8), size: 10, weight: .semibold, color: Theme.ink)
 
         if rows.isEmpty {
-            context.label("No sessions to plot", at: CGPoint(x: Self.canvas.width / 2, y: 70), size: 13, color: Theme.mute)
+            context.label("No sessions to plot", at: CGPoint(x: size.width / 2, y: 60), size: 13, color: Theme.mute)
         }
     }
 }

@@ -44,11 +44,26 @@ register with LaunchServices, and then a Dock or `open` launch can start the oth
   - `DashboardView.swift` — the 1280×800 frame, header, metrics strip, body grid, thought stream and the keyboard.
   - `FlowLayout.swift` turns a turn's steps into positioned nodes and edges; `FlowGraphView.swift` draws them
     (Bézier edges, cracked error nodes, file chips, loop pill, popover, particles).
-  - `HeroTabs.swift` — the brain graph with its context-window bar, the loop radar, the files list.
+  - `HeroTabs.swift` — the brain graph with its context-window bar and the loop radar.
+    `FileTreeLayout.swift` + `FilesView.swift` — the working directory as a schematic.
   - `AgentCard.swift`, `LanesPanel.swift`, `StatsRail.swift`, `WidgetView.swift`, `DockTileView.swift`.
 - `design_handoff_agent_hud_light/` — the Claude Design handoff this UI is built from (frame `3b`).
   `design_handoff_agent_hud_terminal/` (frame `3a`) and `design_handoff_agent_hud/` (the original neon frames, still
   the behavior reference for 1e / 2a) are the earlier directions. `docs/design-prompt.md` — the prompt behind the first.
+
+## Resizing
+
+Every border between panes is draggable: the rail, the stats column, the flow/lanes split and the thought stream.
+The handles appear on hover and the sizes persist (`railWidth`, `statsWidth`, `heroHeight`, `streamHeight`). The
+window itself resizes freely — there is no locked aspect ratio and nothing is scaled; the layout reflows and the
+content follows: the flow graph fits more or fewer columns, lanes stretch their track and show as many rows as
+fit, the brain graph's layer columns are fractions of the pane, and the stats cards fold from two columns to one
+when the rail gets narrow.
+
+Panes window their content rather than scrolling it — `ImageRenderer` cannot draw a `ScrollView`, so `--snapshot`
+would come back blank for any pane that used one. The agent rail shows the cards that fit plus `+N more · ↑↓`,
+and `↑/↓` moves the window. `--snapshot` also writes `dashboard-narrow-*` (1040×640) and `dashboard-wide-*`
+(1680×1000) so both ends of the range stay checkable.
 
 ## How the drawing is organised
 
@@ -71,6 +86,12 @@ use **JetBrains Mono**, falling back to SF Mono. Neither font is bundled yet.
   browsable. The widget, Dock tile and counters only ever count live sessions.
 - Subagent nodes are dashed teal circles carrying the agent type, the model that actually ran and its tokens.
   Source: `<session>/subagents/agent-*.jsonl` + `.meta.json`.
+- The **Files** tab is a schematic, not a list: folders branch, files are leaves sized by how often they were
+  edited, dashed rings mark changes a shell command made. Single-child folder chains collapse to `src/api`, and a
+  file outside the session's own folder keeps only its parent (`…/memory`) — reproducing an absolute path put a
+  90-character folder name across the whole canvas.
+- The loop edge arcs *over* the row rather than under it as the handoff draws it: below the nodes is where the
+  labels and the popover live.
 - A turn longer than the canvas drops middle columns and says so (`⋯ +47 steps`); retries collapse to the latest
   iteration with a red `×N` pill on the loop edge.
 - The Dock tile is an Activity Monitor-style history: output tokens per 10 s over 5 min, stacked, one color per agent.

@@ -109,17 +109,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
         window.isMovableByWindowBackground = true
         window.backgroundColor = NSColor(red: 244 / 255, green: 243 / 255, blue: 238 / 255, alpha: 1)
         window.appearance = NSAppearance(named: .aqua)
-        window.contentAspectRatio = DashboardView.designSize
-        window.contentMinSize = CGSize(width: 960, height: 600)
+        window.contentMinSize = CGSize(width: 1020, height: 620)
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.contentView = NSHostingView(rootView: DashboardView(monitor: monitor))
         window.setFrameAutosaveName("AgentHUD.dashboard")
         if !window.setFrameUsingName("AgentHUD.dashboard") {
-            // Fit smaller screens while keeping the 16:10 design ratio.
+            // Open at the design size, or as close to it as the screen allows.
             let visible = NSScreen.main?.visibleFrame.size ?? DashboardView.designSize
-            let scale = min(1, (visible.width - 40) / 1280, (visible.height - 40) / 800)
-            window.setContentSize(CGSize(width: 1280 * scale, height: 800 * scale))
+            window.setContentSize(CGSize(width: min(1280, visible.width - 40), height: min(800, visible.height - 40)))
             window.center()
         }
         return window

@@ -5,8 +5,6 @@ import SwiftUI
 struct StatsRail: View {
     let monitor: AgentMonitor
     @Binding var burnRange: BurnRange
-    /// 280px column minus 12px of card padding on each side.
-    static let chartWidth: CGFloat = 252
 
     var body: some View {
         let stats = monitor.stats
@@ -30,7 +28,7 @@ struct StatsRail: View {
                     Segmented(options: BurnRange.allCases.map { ($0.rawValue, $0) }, selection: $burnRange, compact: true)
                 }
                 BurnChart(points: stats.burn[burnRange] ?? [])
-                    .frame(width: Self.chartWidth, height: 72)
+                    .frame(height: 72)
                 HStack(spacing: 10) {
                     ForEach(BurnChart.series, id: \.name) { series in
                         HStack(spacing: 4) {
@@ -49,7 +47,19 @@ struct StatsRail: View {
 
     private func mixAndCache(_ stats: StatsSnapshot) -> some View {
         Card {
-            HStack(alignment: .top, spacing: 8) {
+            ViewThatFits(in: .horizontal) {
+                mixAndCacheRow(stats, axis: .horizontal)
+                mixAndCacheRow(stats, axis: .vertical)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    @ViewBuilder private func mixAndCacheRow(_ stats: StatsSnapshot, axis: Axis) -> some View {
+        let layout = axis == .horizontal
+            ? AnyLayout(HStackLayout(alignment: .top, spacing: 8))
+            : AnyLayout(VStackLayout(alignment: .leading, spacing: 10))
+        layout {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Model mix").font(Theme.ui(13, .semibold)).foregroundStyle(Theme.ink)
                     HStack(spacing: 6) {
@@ -70,19 +80,19 @@ struct StatsRail: View {
                         }
                     }
                 }
-                .frame(width: 130, alignment: .topLeading)
+                // The donut plus its legend never compresses; the cache figure takes what is left.
+                .fixedSize(horizontal: true, vertical: false)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Cache hit rate").font(Theme.ui(13, .semibold)).foregroundStyle(Theme.ink)
                     Text("\(Int((stats.cacheHitRate * 100).rounded()))%")
                         .font(Theme.ui(26, .semibold)).foregroundStyle(Theme.subagent)
                         .contentTransition(.numericText())
                     Text("\(stats.cacheRead.compact) / \(stats.cacheDenominator.compact) input")
-                        .font(Theme.ui(11)).foregroundStyle(Theme.mute).lineLimit(1)
+                        .font(Theme.ui(11)).foregroundStyle(Theme.mute)
+                        .lineLimit(1).minimumScaleFactor(0.75)
                 }
                 .frame(maxWidth: .infinity, alignment: .topLeading)
-            }
         }
-        .fixedSize(horizontal: false, vertical: true)
     }
 
     // MARK: Tools + repos
@@ -91,7 +101,19 @@ struct StatsRail: View {
         let toolPeak = max(1, stats.tools.first?.count ?? 1)
         let repoPeak = max(1, stats.repos.first?.tokens ?? 1)
         return Card {
-            HStack(alignment: .top, spacing: 12) {
+            ViewThatFits(in: .horizontal) {
+                toolsAndReposRow(stats, toolPeak: toolPeak, repoPeak: repoPeak, axis: .horizontal)
+                toolsAndReposRow(stats, toolPeak: toolPeak, repoPeak: repoPeak, axis: .vertical)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    @ViewBuilder private func toolsAndReposRow(_ stats: StatsSnapshot, toolPeak: Int, repoPeak: Int, axis: Axis) -> some View {
+        let layout = axis == .horizontal
+            ? AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+            : AnyLayout(VStackLayout(alignment: .leading, spacing: 10))
+        layout {
                 VStack(alignment: .leading, spacing: 5) {
                     Text("Tools").font(Theme.ui(13, .semibold)).foregroundStyle(Theme.ink)
                     ForEach(stats.tools.prefix(5), id: \.name) { tool in
@@ -112,11 +134,9 @@ struct StatsRail: View {
                             value: repo.tokens.compact, valueWidth: 44)
                     }
                     if stats.repos.isEmpty { Text("nothing yet today").font(Theme.ui(11)).foregroundStyle(Theme.mute) }
-                }
-                .frame(maxWidth: .infinity, alignment: .topLeading)
             }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .fixedSize(horizontal: false, vertical: true)
     }
 
     /// `Read ▇▇▇▇░ 412` — square bars on a `track` rail.
@@ -144,17 +164,20 @@ struct StatsRail: View {
                     Text(stats.isBackfilling ? "indexing…" : "tokens / day")
                         .font(Theme.ui(11)).foregroundStyle(Theme.mute)
                 }
-                Canvas { context, _ in
+                Canvas { context, size in
+                    // 12 columns of cells, sized to whatever width the rail has now.
+                    let pitch = size.width / 12
                     for (week, days) in stats.heatmap.enumerated() {
                         for (day, value) in days.enumerated() {
                             guard let value else { continue }
-                            let rect = CGRect(x: CGFloat(week) * 21, y: CGFloat(day) * 10, width: 19, height: 8)
+                            let rect = CGRect(x: CGFloat(week) * pitch, y: CGFloat(day) * 10,
+                                              width: max(4, pitch - 2), height: 8)
                             context.fill(Path(roundedRect: rect, cornerRadius: 1),
                                          with: .color(Theme.reading.opacity(0.06 + value * 0.89)))
                         }
                     }
                 }
-                .frame(width: Self.chartWidth, height: 68)
+                .frame(height: 68)
             }
         }
         .fixedSize(horizontal: false, vertical: true)

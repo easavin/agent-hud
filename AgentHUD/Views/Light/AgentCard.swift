@@ -5,9 +5,7 @@ import SwiftUI
 struct AgentCard: View {
     let agent: AgentSnapshot
     let selected: Bool
-    static let width: CGFloat = 264
-    /// The context bar is 216 wide inside a 240px card interior, as drawn in the prototype.
-    static let barWidth: CGFloat = 216
+    static let height: CGFloat = 112
 
     var body: some View {
         let activity: ActivityKind = agent.isEnded ? .idle : (agent.isLooping ? .error : agent.activity)
@@ -42,7 +40,7 @@ struct AgentCard: View {
                     Spacer(minLength: 4)
                     Text(elapsed).font(Theme.ui(12)).foregroundStyle(Theme.mute)
                 }
-                BarTrack(fraction: agent.contextFill, color: contextColor, width: Self.barWidth)
+                BarTrack(fraction: agent.contextFill, color: contextColor)
                 HStack(spacing: 6) {
                     // Sessions reach tens of millions of tokens, so this line has to survive "33.40M".
                     Text("context \(Int((agent.contextFill * 100).rounded()))% · \(agent.usage.total.compact) tokens")
@@ -55,7 +53,7 @@ struct AgentCard: View {
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
         }
-        .frame(height: 112)
+        .frame(height: Self.height)
         .animation(.easeOut(duration: 0.15), value: selected)
     }
 

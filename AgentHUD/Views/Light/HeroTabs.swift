@@ -4,7 +4,8 @@ import SwiftUI
 /// Hero card, "Brain" tab: what the agent is holding in context, laid out in five layers.
 struct BrainView: View {
     let agent: AgentSnapshot
-    static let layerX: [CGFloat] = [56, 204, 352, 500, 632]
+    /// Column centres as a fraction of the pane's width, so the graph stretches with it.
+    static let layerFraction: [CGFloat] = [0.08, 0.30, 0.51, 0.73, 0.92]
     static let layerNames = ["Prompt", "Files", "Tools", "Reasoning", "Output"]
 
     private struct Placed {
@@ -16,27 +17,29 @@ struct BrainView: View {
     }
 
     var body: some View {
-        let placed = place(agent.brain)
-        VStack(spacing: 10) {
-            Canvas { context, size in draw(placed, in: &context, size: size) }
-                .frame(width: FlowLayout.canvas.width, height: FlowLayout.canvas.height - 30)
-            ContextWindowBar(agent: agent).frame(width: FlowLayout.canvas.width)
+        GeometryReader { proxy in
+            let size = CGSize(width: max(360, proxy.size.width - 28), height: max(140, proxy.size.height - 58))
+            VStack(spacing: 10) {
+                Canvas { context, _ in draw(place(agent.brain, in: size), in: &context, size: size) }
+                    .frame(width: size.width, height: size.height)
+                ContextWindowBar(agent: agent).frame(width: size.width)
+            }
+            .padding(.horizontal, 14)
         }
-        .frame(width: FlowLayout.canvas.width, height: FlowLayout.canvas.height)
     }
 
-    private func place(_ items: [BrainItem]) -> [[Placed]] {
+    private func place(_ items: [BrainItem], in size: CGSize) -> [[Placed]] {
         BrainItem.Layer.allCases.map { layer in
             let members = items.filter { $0.layer == layer }.sorted { $0.tokens > $1.tokens }.prefix(5)
             // Rows have to clear a node's radius plus its label, so five is the most a layer can show.
-            let spacing = min(48, 212 / CGFloat(max(1, members.count)))
+            let spacing = min(48, (size.height - 60) / CGFloat(max(1, members.count)))
             return members.enumerated().map { index, item in
-                let y = 146 + (CGFloat(index) - CGFloat(members.count - 1) / 2) * spacing
+                let y = size.height * 0.52 + (CGFloat(index) - CGFloat(members.count - 1) / 2) * spacing
                 // r = 4 + √(tokens/60), clamped 5–14
                 let radius = min(14, max(5, 4 + (Double(item.tokens) / 60).squareRoot()))
                 let active = item.lastTurn >= agent.turnIndex
                 let color: Color = layer == .prompt ? Theme.ink : Theme.color(for: item.activity)
-                return Placed(item: item, center: CGPoint(x: Self.layerX[layer.rawValue], y: y),
+                return Placed(item: item, center: CGPoint(x: Self.layerFraction[layer.rawValue] * size.width, y: y),
                               radius: radius, active: active, color: color)
             }
         }
@@ -44,7 +47,8 @@ struct BrainView: View {
 
     private func draw(_ layers: [[Placed]], in context: inout GraphicsContext, size: CGSize) {
         for (index, name) in Self.layerNames.enumerated() {
-            context.label(name.uppercased(), at: CGPoint(x: Self.layerX[index], y: 16), size: 10, weight: .semibold, color: Theme.mute)
+            context.label(name.uppercased(), at: CGPoint(x: Self.layerFraction[index] * size.width, y: 12),
+                          size: 10, weight: .semibold, color: Theme.mute)
         }
         // Edges run layer to layer. Connecting every pair turns into a hairball, so each node reaches
         // the two biggest nodes of the next layer, plus any edge that is live this turn.
@@ -134,13 +138,14 @@ struct LoopsView: View {
 
     var body: some View {
         let loop = agent.activeLoop ?? agent.loops.last
-        HStack(spacing: 16) {
-            Canvas { context, size in draw(loop, in: &context, size: size) }
-                .frame(width: 300, height: FlowLayout.canvas.height)
-            iterations(loop)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        GeometryReader { proxy in
+            HStack(spacing: 16) {
+                Canvas { context, size in draw(loop, in: &context, size: size) }
+                    .frame(width: max(200, min(340, proxy.size.width * 0.44)))
+                iterations(loop)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            }
         }
-        .frame(width: FlowLayout.canvas.width, height: FlowLayout.canvas.height)
     }
 
     private func draw(_ loop: LoopInfo?, in context: inout GraphicsContext, size: CGSize) {
@@ -149,8 +154,10 @@ struct LoopsView: View {
             context.label("No loops this session", at: center, size: 13, color: Theme.mute)
             return
         }
+        // Orbits have to stay inside whatever the pane is now.
+        let step = min(Self.orbitStep, (min(size.width, size.height) / 2 - Self.firstOrbit - 12) / CGFloat(max(1, loop.count - 1)))
         for index in 0..<loop.count {
-            let radius = Self.firstOrbit + Self.orbitStep * CGFloat(index)
+            let radius = Self.firstOrbit + step * CGFloat(index)
             let color = Self.ringColor(index, of: loop.count)
             let current = index == loop.count - 1 && !loop.resolved
             context.stroke(Geometry.arc(center, radius, 0, 360), with: .color(color),
@@ -163,7 +170,7 @@ struct LoopsView: View {
         }
         // A resolved loop breaks out of the last orbit on a green tangent.
         if loop.resolved {
-            let radius = Self.firstOrbit + Self.orbitStep * CGFloat(loop.count - 1)
+            let radius = Self.firstOrbit + step * CGFloat(loop.count - 1)
             var escape = Path()
             escape.move(to: Geometry.point(center, radius, 300))
             escape.addLine(to: Geometry.point(center, radius + 34, 310))
@@ -206,65 +213,6 @@ struct LoopsView: View {
                 Spacer(minLength: 0)
             }
             .padding(.trailing, 14).padding(.top, 20)
-        }
-    }
-}
-
-/// Hero card, "Files" tab: what the session read, edited and created, grouped by folder.
-struct FilesView: View {
-    let agent: AgentSnapshot
-
-    private struct Group: Identifiable {
-        let id: String
-        let files: [FileChange]
-    }
-
-    private var groups: [Group] {
-        let root = agent.cwd
-        let byFolder = Dictionary(grouping: agent.files.prefix(30)) { file -> String in
-            var folder = URL(fileURLWithPath: file.path).deletingLastPathComponent().path
-            if folder.hasPrefix(root) { folder = String(folder.dropFirst(root.count)) }
-            let trimmed = folder.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-            return trimmed.isEmpty ? URL(fileURLWithPath: root).lastPathComponent : trimmed
-        }
-        return byFolder.keys.sorted().map { Group(id: $0, files: byFolder[$0]!.sorted { $0.lastTouched > $1.lastTouched }) }
-    }
-
-    var body: some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 20), GridItem(.flexible(), spacing: 20)],
-                  alignment: .leading, spacing: 10) {
-            ForEach(groups) { group in
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(group.id + "/").font(Theme.ui(11, .semibold)).foregroundStyle(Theme.mute).lineLimit(1)
-                    ForEach(group.files) { row($0) }
-                }
-            }
-        }
-        .padding(.horizontal, 14).padding(.top, 12)
-        .frame(width: FlowLayout.canvas.width, height: FlowLayout.canvas.height, alignment: .topLeading)
-        .clipped()
-        .overlay {
-            if agent.files.isEmpty {
-                Text("No files touched yet").font(Theme.ui(13)).foregroundStyle(Theme.mute)
-            }
-        }
-    }
-
-    /// A dot in the activity color, dashed when the change came from a shell command.
-    private func row(_ file: FileChange) -> some View {
-        let activity: ActivityKind = file.kind == .read ? .reading : file.kind == .created ? .running : .editing
-        let color = Theme.color(for: activity)
-        return HStack(spacing: 6) {
-            RoundedRectangle(cornerRadius: 2).fill(file.viaShell ? color.opacity(0.25) : color).frame(width: 8, height: 8)
-                .overlay(file.viaShell
-                    ? RoundedRectangle(cornerRadius: 2).strokeBorder(color, style: StrokeStyle(lineWidth: 1, dash: [1.5, 1.5]))
-                    : nil)
-            Text(URL(fileURLWithPath: file.path).lastPathComponent)
-                .font(Theme.ui(12)).foregroundStyle(Theme.ink)
-                .lineLimit(1).truncationMode(.middle)
-            Spacer(minLength: 4)
-            if file.linesAdded > 0 { Text("+\(file.linesAdded)").font(Theme.ui(11)).foregroundStyle(Theme.running) }
-            if file.linesRemoved > 0 { Text("−\(file.linesRemoved)").font(Theme.ui(11)).foregroundStyle(Theme.error) }
         }
     }
 }
