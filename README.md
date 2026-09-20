@@ -20,7 +20,7 @@ never writes into `~/.claude`. Its only output is a cache of its own in Applicat
 ## Install
 
 ```bash
-git clone https://github.com/<you>/agent-hud.git
+git clone https://github.com/easavin/agent-hud.git
 cd agent-hud
 xcodegen generate
 xcodebuild -project AgentHUD.xcodeproj -scheme AgentHUD -derivedDataPath build build
