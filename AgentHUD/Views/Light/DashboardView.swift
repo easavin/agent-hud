@@ -21,10 +21,18 @@ struct DashboardView: View {
     @State private var activeOnly = false
     @AppStorage("blurThoughts") private var blurThoughts = false
     // Pane sizes are draggable and persist. The defaults are the handoff's grid at 1280×800.
-    @AppStorage("railWidth") private var railWidth = 264.0
-    @AppStorage("statsWidth") private var statsWidth = 280.0
-    @AppStorage("heroHeight") private var heroHeight = 356.0
-    @AppStorage("streamHeight") private var streamHeight = 96.0
+    // They are @State, not @AppStorage: writing UserDefaults on every drag frame makes the whole
+    // dashboard re-render through the defaults system and the drag stutters.
+    @State private var railWidth = DashboardView.stored("railWidth", 264)
+    @State private var statsWidth = DashboardView.stored("statsWidth", 280)
+    @State private var heroHeight = DashboardView.stored("heroHeight", 356)
+    @State private var streamHeight = DashboardView.stored("streamHeight", 96)
+
+    static func stored(_ key: String, _ fallback: Double) -> Double {
+        UserDefaults.standard.object(forKey: key) as? Double ?? fallback
+    }
+
+    private func persist(_ key: String, _ value: Double) { UserDefaults.standard.set(value, forKey: key) }
     @FocusState private var focused: Bool
 
     init(monitor: AgentMonitor, initialTab: HeroTab = .flow) {
@@ -32,7 +40,7 @@ struct DashboardView: View {
         _heroTab = State(initialValue: initialTab)
     }
 
-    /// Live sessions first, then the ones that ended recently.
+    /// Live sessions first, then the ones that ended recently. Built once per render, not per read.
     private var rows: [AgentSnapshot] {
         let all = monitor.agents + monitor.recent
         return activeOnly ? all.filter { $0.activity.isActive } : all
@@ -58,7 +66,8 @@ struct DashboardView: View {
             metrics
             body(in: CGSize(width: size.width, height: max(220, size.height - chrome - stream)))
             Splitter(axis: .horizontal, value: $streamHeight,
-                     range: 60...max(60, size.height - chrome - 220), sign: -1)
+                     range: 60...max(60, size.height - chrome - 220), sign: -1,
+                     onCommit: { persist("streamHeight", streamHeight) })
                 .padding(.horizontal, 16)
             ThoughtStream(agents: rows, blur: $blurThoughts)
                 .frame(height: stream)
@@ -122,6 +131,7 @@ struct DashboardView: View {
     // MARK: Body
 
     private func body(in size: CGSize) -> some View {
+        let rows = rows
         // Each column keeps at least enough width to stay legible; the centre takes the remainder.
         let inner = size.width - 32 - Splitter.thickness * 2
         let rail = min(max(railWidth, 190), max(190, inner - 360 - 250))
@@ -157,20 +167,23 @@ struct DashboardView: View {
             }
             .frame(width: rail)
 
-            Splitter(axis: .vertical, value: $railWidth, range: 190...max(190, inner - 360 - 250))
+            Splitter(axis: .vertical, value: $railWidth, range: 190...max(190, inner - 360 - 250),
+                     onCommit: { persist("railWidth", railWidth) })
 
             VStack(spacing: 0) {
                 heroCard.frame(height: hero)
                 Splitter(axis: .horizontal, value: $heroHeight,
-                         range: 200...max(200, bodyHeight - Splitter.thickness - 150))
+                         range: 200...max(200, bodyHeight - Splitter.thickness - 150),
+                         onCommit: { persist("heroHeight", heroHeight) })
                 LanesPanel(agents: rows, range: $laneRange).frame(maxHeight: .infinity)
             }
             .frame(maxWidth: .infinity)
 
             Splitter(axis: .vertical, value: $statsWidth,
-                     range: 250...max(250, inner - rail - 360), sign: -1)
+                     range: 250...max(250, inner - rail - 360), sign: -1,
+                     onCommit: { persist("statsWidth", statsWidth) })
 
-            StatsRail(monitor: monitor, burnRange: $burnRange)
+            StatsRail(monitor: monitor, burnRange: $burnRange, width: stats)
                 .frame(width: stats, height: bodyHeight, alignment: .top)
                 .clipped()
         }
@@ -268,7 +281,7 @@ struct RefreshButton: View {
 struct ThoughtStream: View {
     let agents: [AgentSnapshot]
     @Binding var blur: Bool
-    static let rows = 4
+    static let rowHeight: CGFloat = 15
 
     private struct Line: Identifiable {
         let id: String
@@ -276,32 +289,38 @@ struct ThoughtStream: View {
         let item: TickerItem
     }
 
-    private var lines: [Line] {
-        agents.flatMap { agent in agent.ticker.suffix(Self.rows).map { Line(id: agent.id + $0.id, agent: agent, item: $0) } }
+    /// As many of the newest lines as the pane has room for, oldest first.
+    private func lines(_ count: Int) -> [Line] {
+        agents.flatMap { agent in agent.ticker.suffix(count).map { Line(id: agent.id + $0.id, agent: agent, item: $0) } }
             .sorted { $0.item.date > $1.item.date }
-            .prefix(Self.rows)
+            .prefix(count)
             .reversed()
     }
 
     var body: some View {
         Card(padding: 0) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack {
-                    Text("Thought stream").font(Theme.ui(13, .semibold)).foregroundStyle(Theme.ink)
-                    Spacer()
-                    Text("Blur thoughts").font(Theme.ui(11)).foregroundStyle(Theme.mute)
-                    BlurToggle(isOn: $blur)
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    ForEach(lines) { line in row(line) }
-                    if lines.isEmpty {
-                        Text("Nothing said yet").font(Theme.mono(11)).foregroundStyle(Theme.mute)
+            GeometryReader { proxy in
+                // Header and padding first; the rest is 15pt lines.
+                let count = max(1, Int((proxy.size.height - 32) / Self.rowHeight))
+                let lines = lines(count)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack {
+                        Text("Thought stream").font(Theme.ui(13, .semibold)).foregroundStyle(Theme.ink)
+                        Spacer()
+                        Text("Blur thoughts").font(Theme.ui(11)).foregroundStyle(Theme.mute)
+                        BlurToggle(isOn: $blur)
                     }
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(lines) { line in row(line) }
+                        if lines.isEmpty {
+                            Text("Nothing said yet").font(Theme.mono(11)).foregroundStyle(Theme.mute)
+                        }
+                    }
+                    .animation(.easeOut(duration: 0.15), value: lines.last?.id)
+                    Spacer(minLength: 0)
                 }
-                .animation(.easeOut(duration: 0.15), value: lines.last?.id)
-                Spacer(minLength: 0)
+                .padding(.horizontal, 14).padding(.vertical, 6)
             }
-            .padding(.horizontal, 14).padding(.vertical, 6)
         }
     }
 

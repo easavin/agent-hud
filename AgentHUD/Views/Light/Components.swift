@@ -258,6 +258,8 @@ struct Splitter: View {
     let range: ClosedRange<Double>
     /// -1 when dragging right (or down) should shrink the bound pane rather than grow it.
     var sign: Double = 1
+    /// Called once when the drag ends, so the size can be written to disk then rather than per frame.
+    var onCommit: () -> Void = {}
     static let thickness: CGFloat = 12
 
     @State private var start: Double?
@@ -279,7 +281,9 @@ struct Splitter: View {
         .contentShape(Rectangle())
         .onHover { inside in
             hovering = inside
-            setCursor(inside)
+            // Mid-drag the splitter slides out from under the pointer; changing the cursor then makes
+            // it strobe between the resize arrows and the pointer.
+            if start == nil { setCursor(inside) }
         }
         .gesture(
             DragGesture(minimumDistance: 1)
@@ -289,7 +293,11 @@ struct Splitter: View {
                     let delta = axis == .vertical ? drag.translation.width : drag.translation.height
                     value = min(max(base + sign * delta, range.lowerBound), range.upperBound)
                 }
-                .onEnded { _ in start = nil }
+                .onEnded { _ in
+                    start = nil
+                    setCursor(hovering)
+                    onCommit()
+                }
         )
         .animation(.easeOut(duration: 0.12), value: hovering)
     }

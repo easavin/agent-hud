@@ -5,6 +5,13 @@ import SwiftUI
 struct StatsRail: View {
     let monitor: AgentMonitor
     @Binding var burnRange: BurnRange
+    /// The rail's width. Below this the two-column cards stack instead — decided from the number
+    /// rather than with `ViewThatFits`, which re-measures mid-drag and flickers.
+    var width: CGFloat = 280
+    static let twoColumnWidth: CGFloat = 268
+    private var twoColumn: Bool { width >= Self.twoColumnWidth }
+    /// The donut and its legend need more than half the card; the cache figure is happy with the rest.
+    private var mixWidth: CGFloat { twoColumn ? (width - 32) * 0.56 : .infinity }
 
     var body: some View {
         let stats = monitor.stats
@@ -47,10 +54,7 @@ struct StatsRail: View {
 
     private func mixAndCache(_ stats: StatsSnapshot) -> some View {
         Card {
-            ViewThatFits(in: .horizontal) {
-                mixAndCacheRow(stats, axis: .horizontal)
-                mixAndCacheRow(stats, axis: .vertical)
-            }
+            mixAndCacheRow(stats, axis: twoColumn ? .horizontal : .vertical)
         }
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -62,17 +66,18 @@ struct StatsRail: View {
         layout {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Model mix").font(Theme.ui(13, .semibold)).foregroundStyle(Theme.ink)
-                    HStack(spacing: 6) {
-                        Donut(slices: stats.modelMix).frame(width: 48, height: 48)
+                    HStack(spacing: 5) {
+                        Donut(slices: stats.modelMix).frame(width: 42, height: 42)
                         VStack(alignment: .leading, spacing: 1) {
                             ForEach(stats.modelMix.prefix(4), id: \.model) { slice in
-                                HStack(spacing: 4) {
-                                    Rectangle().fill(Theme.modelColor(slice.model)).frame(width: 7, height: 7)
+                                // Tight on purpose: a full model name has to fit beside the donut.
+                                HStack(spacing: 3) {
+                                    Rectangle().fill(Theme.modelColor(slice.model)).frame(width: 6, height: 6)
                                     Text(slice.model).font(Theme.ui(10)).foregroundStyle(Theme.mute)
                                     Text("\(Int((slice.share * 100).rounded()))%")
                                         .font(Theme.ui(10, .semibold)).foregroundStyle(Theme.ink)
                                 }
-                                .lineLimit(1).fixedSize()
+                                .lineLimit(1).minimumScaleFactor(0.8)
                             }
                             if stats.modelMix.isEmpty {
                                 Text("no usage today").font(Theme.ui(10)).foregroundStyle(Theme.mute)
@@ -80,8 +85,7 @@ struct StatsRail: View {
                         }
                     }
                 }
-                // The donut plus its legend never compresses; the cache figure takes what is left.
-                .fixedSize(horizontal: true, vertical: false)
+                .frame(maxWidth: mixWidth, alignment: .topLeading)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Cache hit rate").font(Theme.ui(13, .semibold)).foregroundStyle(Theme.ink)
                     Text("\(Int((stats.cacheHitRate * 100).rounded()))%")
@@ -101,10 +105,7 @@ struct StatsRail: View {
         let toolPeak = max(1, stats.tools.first?.count ?? 1)
         let repoPeak = max(1, stats.repos.first?.tokens ?? 1)
         return Card {
-            ViewThatFits(in: .horizontal) {
-                toolsAndReposRow(stats, toolPeak: toolPeak, repoPeak: repoPeak, axis: .horizontal)
-                toolsAndReposRow(stats, toolPeak: toolPeak, repoPeak: repoPeak, axis: .vertical)
-            }
+            toolsAndReposRow(stats, toolPeak: toolPeak, repoPeak: repoPeak, axis: twoColumn ? .horizontal : .vertical)
         }
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -117,10 +118,10 @@ struct StatsRail: View {
                 VStack(alignment: .leading, spacing: 5) {
                     Text("Tools").font(Theme.ui(13, .semibold)).foregroundStyle(Theme.ink)
                     ForEach(stats.tools.prefix(5), id: \.name) { tool in
-                        row(tool.name, nameWidth: 36, barWidth: 52,
+                        row(tool.name, nameWidth: 34, barWidth: 44,
                             fraction: Double(tool.count) / Double(toolPeak),
                             color: Theme.color(for: ActivityClassifier.activity(forTool: tool.name)),
-                            value: "\(tool.count)", valueWidth: 30)
+                            value: "\(tool.count)", valueWidth: 28)
                     }
                     if stats.tools.isEmpty { Text("nothing yet today").font(Theme.ui(11)).foregroundStyle(Theme.mute) }
                 }
@@ -128,10 +129,10 @@ struct StatsRail: View {
                 VStack(alignment: .leading, spacing: 5) {
                     Text("Repos").font(Theme.ui(13, .semibold)).foregroundStyle(Theme.ink)
                     ForEach(stats.repos.prefix(5), id: \.name) { repo in
-                        row(repo.name, nameWidth: 58, barWidth: 20,
+                        row(repo.name, nameWidth: 52, barWidth: 18,
                             fraction: Double(repo.tokens) / Double(repoPeak),
                             color: Theme.modelColor(repo.model),
-                            value: repo.tokens.compact, valueWidth: 44)
+                            value: repo.tokens.compact, valueWidth: 40)
                     }
                     if stats.repos.isEmpty { Text("nothing yet today").font(Theme.ui(11)).foregroundStyle(Theme.mute) }
             }
@@ -149,7 +150,7 @@ struct StatsRail: View {
                      trackColor: Theme.track, radius: 0)
             Spacer(minLength: 0)
             Text(value).font(Theme.ui(11)).foregroundStyle(Theme.mute)
-                .lineLimit(1).fixedSize().frame(width: valueWidth, alignment: .trailing)
+                .lineLimit(1).minimumScaleFactor(0.8).frame(width: valueWidth, alignment: .trailing)
         }
     }
 

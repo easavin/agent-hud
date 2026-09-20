@@ -155,7 +155,13 @@ use **JetBrains Mono**, falling back to SF Mono. Neither font is bundled.
 
 Anything with a shape of its own is a `Canvas`: the flow graph, brain graph, loop radar, lanes,
 stacked-area burn chart, donut, heatmap. Cards, controls and text stay ordinary SwiftUI so they
-hit-test and truncate properly. Panes window their content rather than scrolling it — `ImageRenderer`
+hit-test and truncate properly. Dragging updates `@State` and writes to `UserDefaults` once, on release: `@AppStorage` pushes every frame of a
+drag through the defaults system and the whole dashboard re-renders with it. The stats rail picks its one- or
+two-column layout from the width it is handed rather than with `ViewThatFits`, which re-measures mid-drag and
+flickers, and the splitter holds its cursor for the length of a drag instead of swapping it as the handle slides
+out from under the pointer.
+
+Panes window their content rather than scrolling it — `ImageRenderer`
 cannot draw a `ScrollView`, so `--snapshot` would come back blank for any pane that used one.
 
 ## Contributing
