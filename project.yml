@@ -1,6 +1,6 @@
 name: AgentHUD
 options:
-  bundleIdPrefix: com.evgeny
+  bundleIdPrefix: com.agenthud
   deploymentTarget:
     macOS: "14.0"
 packages:
@@ -11,6 +11,9 @@ targets:
     type: application
     platform: macOS
     sources: [AgentHUD]
+    configFiles:
+      Debug: Signing.xcconfig
+      Release: Signing.xcconfig
     dependencies:
       - package: HUDCore
     info:
@@ -23,17 +26,11 @@ targets:
         NSHumanReadableCopyright: Local, read-only monitor for Claude Code sessions.
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.evgeny.AgentHUD
+        PRODUCT_BUNDLE_IDENTIFIER: com.agenthud.AgentHUD
         MARKETING_VERSION: "0.4.0"
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "6.0"
         # Reads ~/.claude, so the app cannot be sandboxed.
         ENABLE_APP_SANDBOX: NO
         ENABLE_HARDENED_RUNTIME: NO
-        # A real identity, not ad-hoc: an ad-hoc signature changes with every build, so macOS treats
-        # each rebuild as a new app and re-asks for Documents access (sessions run under ~/Documents,
-        # and DirectoryScanner walks the session's working directory).
-        CODE_SIGN_IDENTITY: "Apple Development"
-        CODE_SIGN_STYLE: Manual
-        DEVELOPMENT_TEAM: TJ4NKH4368
-        PROVISIONING_PROFILE_SPECIFIER: ""
+        # Signing lives in Signing.xcconfig (ad-hoc by default, overridable locally).

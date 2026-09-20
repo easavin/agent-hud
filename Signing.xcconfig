@@ -1,0 +1,25 @@
+// Code signing for Agent HUD.
+//
+// The default is ad-hoc: the project builds with no Apple Developer account and
+// no configuration. That is all you need to run the app.
+//
+// The one thing ad-hoc costs you is a stable identity. The Files tab walks each
+// session's working directory, so macOS asks for access to Documents / Desktop /
+// Downloads the first time a session runs there. An ad-hoc signature changes on
+// every build, so macOS treats each rebuild as a new app and asks again. If that
+// gets old, sign with your own Apple Development certificate: create
+// Signing.local.xcconfig next to this file (it is gitignored) containing
+//
+//     CODE_SIGN_IDENTITY = Apple Development
+//     CODE_SIGN_STYLE = Manual
+//     DEVELOPMENT_TEAM = YOURTEAMID
+//
+// and the grant will stick across rebuilds.
+
+CODE_SIGN_IDENTITY = -
+CODE_SIGN_STYLE = Manual
+DEVELOPMENT_TEAM =
+PROVISIONING_PROFILE_SPECIFIER =
+
+// Local, uncommitted overrides. Optional — the build works without it.
+#include? "Signing.local.xcconfig"

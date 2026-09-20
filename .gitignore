@@ -5,3 +5,11 @@ DerivedData/
 *.xcodeproj
 xcuserdata/
 dist/
+
+# Local code-signing override (see Signing.xcconfig).
+Signing.local.xcconfig
+
+# `AgentHUD --snapshot <dir>` in live mode renders your real sessions: prompt
+# text, file paths, repo and branch names. Keep those out of the repository.
+snapshots/
+shots/
