@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><meta name="design_doc_mode" content="canvas"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>
+body{margin:0;background:#0E1117;color:#E6ECFF;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+a{color:#2FD4FF;text-decoration:none}a:hover{color:#E6ECFF}
+@keyframes breathe{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes pulseRed{0%,100%{opacity:.45;filter:drop-shadow(0 0 2px #FF3B5C)}50%{opacity:1;filter:drop-shadow(0 0 12px #FF3B5C)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes flow{to{offset-distance:100%}}
+@keyframes playhead{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+.rm *{animation:none!important}
+.blur .th{filter:blur(4px);opacity:.7}
+</style></helmet>
+<div class="{{ rootClass }}" style="padding:40px 44px 60px;display:flex;flex-direction:column;gap:56px;min-width:1380px">
+<section id="t2" style="display:flex;flex-direction:column;gap:32px;padding-bottom:48px;border-bottom:1px solid rgba(124,160,255,.12)">
+<div style="display:flex;align-items:baseline;gap:12px"><a href="#t2" style="font-size:10px;font-weight:600;padding:3px 7px;background:#E6ECFF;color:#05070D;border-radius:4px">2</a><span style="font-size:13px;font-weight:600">Deeper: progress rings · context brain · loop radar</span><span style="font-size:11px;color:#7C8AA8">dashboard-only additions on top of <a href="#1e">1e</a></span></div>
+<div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+<!-- 2a dashboard v2 -->
+<div id="2a" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+<div style="display:flex;align-items:baseline;gap:8px;font-size:11px;color:#7C8AA8"><a href="#2a" style="font-size:10px;font-weight:600;padding:2px 6px;background:rgba(230,236,255,.1);color:#E6ECFF;border-radius:4px">2a</a><span style="color:#E6ECFF;font-weight:600">Dashboard · Brain view</span><span>hero tab Flow → Brain · cards gain progress ring + ETA · Loops panel becomes a radar</span></div>
+<div style="width:1280px;height:800px;box-sizing:border-box;position:relative;overflow:hidden;border-radius:12px;background:radial-gradient(90% 60% at 50% 0%,#0B1020 0%,#05070D 70%);border:1px solid rgba(124,160,255,.16);box-shadow:0 0 0 1px rgba(0,0,0,.7),0 20px 60px rgba(0,0,0,.6);display:flex;flex-direction:column">
+<div style="position:absolute;inset:0;background-image:linear-gradient(rgba(124,160,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(124,160,255,.045) 1px,transparent 1px);background-size:32px 32px;mask-image:radial-gradient(60% 50% at 50% 40%,#000 0%,transparent 100%);pointer-events:none"></div>
+<div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid rgba(124,160,255,.12);position:relative">
+<div style="display:flex;align-items:center;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase">Agent HUD</span><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8">mission control</span></div>
+<div style="display:flex;gap:24px;font-size:10px;color:#7C8AA8"><span><span style="color:#E6ECFF;font-weight:600;font-size:12px">46.5k</span> tok/min</span><span><span style="color:#E6ECFF;font-weight:600;font-size:12px">3.12M</span> today</span><span><span style="color:#E6ECFF;font-weight:600;font-size:12px">$41.27</span> est.</span><span><span style="color:#E6ECFF;font-weight:600;font-size:12px">15</span>/30 steps</span><span><span style="color:#3DFF7A;font-weight:600;font-size:12px">4</span>/5 active</span></div>
+<div style="display:flex;align-items:center;gap:12px;font-size:10px;color:#7C8AA8"><span>14:32:07</span><span style="width:6px;height:6px;border-radius:3px;background:#3DFF7A;box-shadow:0 0 8px #3DFF7A;animation:breathe 2s ease-in-out infinite"></span></div>
+</div>
+<div style="flex:none;height:632px;display:grid;grid-template-columns:264px 704px 296px;gap:8px;padding:8px;box-sizing:border-box;position:relative">
+<!-- left rail w/ progress -->
+<div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 4px 0"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Agents · 5</span><span style="font-size:9px;color:#7C8AA8">sort: activity</span></div>
+<sc-for list="{{ cards2 }}" as="c" hint-placeholder-count="5">
+<div style="padding:8px 12px;border-radius:10px;border:1px solid {{ c.border }};background:{{ c.bg }};box-shadow:{{ c.shadow }};display:flex;flex-direction:column;gap:5px;box-sizing:border-box">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="display:flex;align-items:center;gap:8px;min-width:0"><div style="position:relative;width:28px;height:28px;flex:none"><svg width="28" height="28" style="display:block;overflow:visible"><path d="{{ c.pTrack }}" fill="none" stroke="rgba(124,160,255,.14)" stroke-width="2.5"></path><path d="{{ c.pArc }}" fill="none" stroke="{{ c.pColor }}" stroke-width="2.5" stroke-linecap="round" style="filter:{{ c.pGlow }}"></path></svg><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:600;color:#E6ECFF">{{ c.steps }}</div></div><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:12px;font-weight:600;white-space:nowrap">{{ c.name }}</span><span style="font-size:8px;color:#7C8AA8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">⎇ {{ c.branch }} · <span style="color:{{ c.etaColor }}">eta {{ c.eta }}</span></span></div></div><span style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:8px;border:1px solid {{ c.mc }};color:{{ c.mc }};flex:none">{{ c.model }}</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;font-size:9px;letter-spacing:.1em;text-transform:uppercase"><span style="display:flex;gap:6px;align-items:center;color:{{ c.sc }}"><span style="width:6px;height:6px;border-radius:3px;background:{{ c.sc }};box-shadow:0 0 6px {{ c.sc }}"></span>{{ c.status }}</span><span style="color:#7C8AA8;letter-spacing:0">{{ c.elapsed }}</span></div>
+<svg width="216" height="4" style="display:block"><rect x="0" y="0" width="216" height="4" rx="2" fill="rgba(124,160,255,.12)"></rect><rect x="0" y="0" width="{{ c.ctxW }}" height="4" rx="2" fill="{{ c.ctxColor }}"></rect></svg>
+<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:9px;color:#7C8AA8;white-space:nowrap">ctx <span style="color:#E6ECFF">{{ c.ctxPct }}%</span> · <span style="color:#E6ECFF">{{ c.tokens }}</span></div><svg width="88" height="18" style="display:block"><path d="{{ c.hb }}" fill="none" stroke="{{ c.sc }}" stroke-width="1" stroke-linejoin="round" style="opacity:.9"></path></svg></div>
+</div>
+</sc-for>
+</div>
+<!-- center: brain -->
+<div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+<div style="height:376px;box-sizing:border-box;padding:8px;background:rgba(11,16,32,.55);border:1px solid rgba(124,160,255,.14);border-radius:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03);position:relative;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;height:24px;padding:0 4px"><div style="display:flex;align-items:center;gap:10px;white-space:nowrap"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500"><span style="color:#E6ECFF">orbit-core</span> · turn 7</span><div style="display:flex;gap:2px;font-size:8px;letter-spacing:.1em;text-transform:uppercase"><span style="padding:2px 7px;border-radius:6px;color:#7C8AA8;border:1px solid rgba(124,160,255,.14)">flow</span><span style="padding:2px 7px;border-radius:6px;color:#E6ECFF;border:1px solid rgba(179,107,255,.6);background:rgba(179,107,255,.12)">brain</span><span style="padding:2px 7px;border-radius:6px;color:#7C8AA8;border:1px solid rgba(124,160,255,.14)">loops</span></div></div><div style="display:flex;gap:10px;flex:none;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#7C8AA8"><span>node size = tokens held</span><span style="color:#E6ECFF">bright = active this turn</span></div></div>
+<div style="position:relative;width:688px;height:322px;margin-top:6px">
+<svg width="688" height="322" style="position:absolute;left:0;top:0;overflow:visible">
+<sc-for list="{{ blayers }}" as="l" hint-placeholder-count="5"><line x1="{{ l.x }}" y1="18" x2="{{ l.x }}" y2="300" stroke="rgba(124,160,255,.07)" stroke-width="1" stroke-dasharray="1 4"></line></sc-for>
+<sc-for list="{{ bedges }}" as="e" hint-placeholder-count="40"><path d="{{ e.d }}" fill="none" stroke="{{ e.color }}" stroke-width="{{ e.w }}" style="opacity:{{ e.op }}"></path></sc-for>
+<sc-for list="{{ bnodes }}" as="n" hint-placeholder-count="20">
+<circle cx="{{ n.x }}" cy="{{ n.y }}" r="{{ n.rh }}" fill="{{ n.color }}" style="opacity:.07"></circle>
+<circle cx="{{ n.x }}" cy="{{ n.y }}" r="{{ n.r }}" fill="{{ n.fill }}" stroke="{{ n.color }}" stroke-width="1.25" style="opacity:{{ n.op }};filter:{{ n.glow }};animation:{{ n.anim }}"></circle>
+</sc-for>
+<sc-for list="{{ ctxBar }}" as="b" hint-placeholder-count="4"><rect x="{{ b.x }}" y="312" width="{{ b.w }}" height="6" rx="1" fill="{{ b.color }}" style="opacity:.8"></rect></sc-for>
+<rect x="0" y="312" width="688" height="6" rx="1" fill="none" stroke="rgba(124,160,255,.14)" stroke-width="1"></rect>
+<line x1="426" y1="306" x2="426" y2="324" stroke="#E6ECFF" stroke-width="1" style="opacity:.6"></line>
+</svg>
+{{ bparticles }}
+<sc-for list="{{ blayers }}" as="l" hint-placeholder-count="5"><div style="position:absolute;left:{{ l.left }};top:0;width:100px;text-align:center;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:#7C8AA8;pointer-events:none;white-space:nowrap">{{ l.label }}</div></sc-for>
+<sc-for list="{{ bnodes }}" as="n" hint-placeholder-count="20"><div style="position:absolute;left:{{ n.ll }};top:{{ n.lt }};font-size:8px;line-height:12px;color:#C7D0E8;pointer-events:none;white-space:nowrap;opacity:{{ n.op }}">{{ n.name }} <span style="color:#7C8AA8">{{ n.tok }}</span></div></sc-for>
+<div style="position:absolute;left:0;top:296px;display:flex;gap:12px;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:#7C8AA8;white-space:nowrap"><span>context 124k / 200k</span><span style="color:#7C8AA8">■ system 8k</span><span style="color:#2FD4FF">■ files 61k</span><span style="color:#3DFF7A">■ tool results 34k</span><span style="color:#B36BFF">■ thinking 21k</span><span style="color:#E6ECFF">│ compaction at 62%</span></div>
+</div>
+</div>
+<!-- lanes (same as 1e) -->
+<div style="height:232px;box-sizing:border-box;padding:8px;background:rgba(11,16,32,.55);border:1px solid rgba(124,160,255,.14);border-radius:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03);position:relative;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;height:24px;padding:0 4px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Activity lanes · last 60 min</span><div style="display:flex;gap:4px;font-size:8px;letter-spacing:.1em;text-transform:uppercase"><span style="padding:2px 6px;border-radius:6px;color:#7C8AA8;border:1px solid rgba(124,160,255,.14)">15m</span><span style="padding:2px 6px;border-radius:6px;color:#E6ECFF;border:1px solid rgba(47,212,255,.5);background:rgba(47,212,255,.1)">60m</span><span style="padding:2px 6px;border-radius:6px;color:#7C8AA8;border:1px solid rgba(124,160,255,.14)">6h</span></div></div>
+<div style="position:relative;width:688px;height:188px;margin-top:6px">
+<svg width="688" height="188" style="display:block;overflow:visible">
+<sc-for list="{{ lanes }}" as="ln" hint-placeholder-count="5">
+<g transform="{{ ln.tf }}">
+<rect x="96" y="6" width="560" height="14" rx="3" fill="rgba(124,160,255,.05)"></rect>
+<sc-for list="{{ ln.segs }}" as="s" hint-placeholder-count="10"><rect x="{{ s.x }}" y="6" width="{{ s.w }}" height="14" rx="2" fill="{{ s.color }}" style="opacity:.8"></rect></sc-for>
+<sc-for list="{{ ln.ticks }}" as="t" hint-placeholder-count="3"><rect x="{{ t.x }}" y="0" width="1.5" height="5" fill="#E6ECFF"></rect></sc-for>
+</g>
+</sc-for>
+<line x1="658" y1="0" x2="658" y2="150" stroke="#2FD4FF" stroke-width="1.5" style="filter:drop-shadow(0 0 6px #2FD4FF);animation:playhead 2s ease-in-out infinite"></line>
+<text x="658" y="166" text-anchor="middle" fill="#2FD4FF" font-size="8" style="font-family:inherit;letter-spacing:.1em">NOW</text>
+<sc-for list="{{ axis }}" as="a" hint-placeholder-count="4"><line x1="{{ a.x }}" y1="0" x2="{{ a.x }}" y2="150" stroke="rgba(124,160,255,.08)" stroke-width="1"></line></sc-for>
+</svg>
+<sc-for list="{{ lanes }}" as="ln" hint-placeholder-count="5"><div style="position:absolute;left:4px;top:{{ ln.top }};font-size:10px;line-height:16px;color:#E6ECFF;pointer-events:none">{{ ln.name }}</div></sc-for>
+<sc-for list="{{ axis }}" as="a" hint-placeholder-count="4"><div style="position:absolute;left:{{ a.left }};top:158px;width:40px;text-align:center;font-size:8px;color:#7C8AA8;pointer-events:none">{{ a.t }}</div></sc-for>
+</div>
+</div>
+</div>
+<!-- right rail with radar -->
+<div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+<div style="box-sizing:border-box;padding:10px;background:rgba(11,16,32,.55);border:1px solid rgba(124,160,255,.14);border-radius:10px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Token burn</span><div style="display:flex;gap:2px;font-size:8px;letter-spacing:.08em"><span style="padding:2px 6px;border-radius:6px;color:#7C8AA8">1h</span><span style="padding:2px 6px;border-radius:6px;color:#E6ECFF;border:1px solid rgba(47,212,255,.5);background:rgba(47,212,255,.1)">24h</span><span style="padding:2px 6px;border-radius:6px;color:#7C8AA8">7d</span></div></div>
+<svg width="252" height="72" style="display:block"><sc-for list="{{ areas }}" as="ar" hint-placeholder-count="4"><path d="{{ ar.d }}" fill="{{ ar.color }}" style="opacity:.55"></path><path d="{{ ar.line }}" fill="none" stroke="{{ ar.color }}" stroke-width="1"></path></sc-for><line x1="0" y1="71.5" x2="252" y2="71.5" stroke="rgba(124,160,255,.2)" stroke-width="1"></line></svg>
+<div style="display:flex;gap:10px;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:#7C8AA8"><span style="color:#2FD4FF">● input</span><span style="color:#FFB020">● output</span><span style="color:#17D4B0">● cache-read</span><span style="color:#B36BFF">● thinking</span></div>
+</div>
+<div style="box-sizing:border-box;padding:10px;background:rgba(11,16,32,.55);border:1px solid rgba(255,59,92,.28);border-radius:10px;display:grid;grid-template-columns:64px 1fr;gap:12px;align-items:center;box-shadow:0 0 20px rgba(255,59,92,.06)">
+<div style="position:relative;width:64px;height:64px"><svg width="64" height="64" style="display:block;overflow:visible"><circle cx="32" cy="32" r="3" fill="#FFB020" style="filter:drop-shadow(0 0 4px #FFB020)"></circle><sc-for list="{{ radarMini }}" as="r" hint-placeholder-count="4"><path d="{{ r.d }}" fill="none" stroke="{{ r.color }}" stroke-width="{{ r.w }}" stroke-dasharray="{{ r.dash }}" stroke-linecap="round" style="opacity:{{ r.op }};animation:{{ r.anim }}"></path><circle cx="{{ r.fx }}" cy="{{ r.fy }}" r="1.5" fill="#FF3B5C"></circle></sc-for></svg></div>
+<div style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Loop radar</span><div style="display:flex;gap:10px;align-items:baseline"><span style="font-size:20px;font-weight:600;letter-spacing:-.02em;color:#FF3B5C">×4</span><span style="font-size:9px;color:#E6ECFF;white-space:nowrap">lantern · edit→pytest</span></div><span style="font-size:8px;color:#7C8AA8;white-space:nowrap">7 loops today · 12 errors · orbit-core ×3 resolved</span></div>
+</div>
+<div style="box-sizing:border-box;padding:10px;background:rgba(11,16,32,.55);border:1px solid rgba(124,160,255,.14);border-radius:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Model mix</span><div style="display:flex;gap:8px;align-items:center"><svg width="64" height="64" style="display:block"><sc-for list="{{ donut }}" as="d" hint-placeholder-count="4"><path d="{{ d.d }}" fill="none" stroke="{{ d.color }}" stroke-width="8" style="opacity:.9"></path></sc-for></svg><div style="display:flex;flex-direction:column;gap:2px;font-size:8px;color:#7C8AA8;white-space:nowrap"><sc-for list="{{ donut }}" as="d" hint-placeholder-count="4"><span><span style="color:{{ d.color }}">●</span> {{ d.name }} <span style="color:#E6ECFF">{{ d.pct }}%</span></span></sc-for></div></div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Cache hit</span><div style="position:relative;width:64px;height:64px"><svg width="64" height="64" style="display:block;overflow:visible"><path d="{{ gaugeBg }}" fill="none" stroke="rgba(124,160,255,.12)" stroke-width="6" stroke-linecap="round"></path><path d="{{ gaugeVal }}" fill="none" stroke="#17D4B0" stroke-width="6" stroke-linecap="round" style="filter:drop-shadow(0 0 5px #17D4B0)"></path></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1"><span style="font-size:14px;font-weight:600">71%</span><span style="font-size:7px;color:#7C8AA8;margin-top:2px">1.9M / 2.7M</span></div></div></div>
+</div>
+<div style="box-sizing:border-box;padding:10px;background:rgba(11,16,32,.55);border:1px solid rgba(124,160,255,.14);border-radius:10px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+<div style="display:flex;flex-direction:column;gap:5px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Tool usage</span><sc-for list="{{ tools }}" as="t" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:34px 1fr 28px;gap:6px;align-items:center;font-size:9px"><span style="color:#E6ECFF">{{ t.name }}</span><svg width="52" height="4" style="display:block"><rect x="0" y="0" width="52" height="4" rx="2" fill="rgba(124,160,255,.1)"></rect><rect x="0" y="0" width="{{ t.w }}" height="4" rx="2" fill="{{ t.color }}"></rect></svg><span style="color:#7C8AA8;text-align:right">{{ t.v }}</span></div></sc-for></div>
+<div style="display:flex;flex-direction:column;gap:5px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Est. cost</span><div style="font-size:20px;font-weight:600;letter-spacing:-.02em">$41.27</div><div style="font-size:8px;color:#7C8AA8">+$3.10 / h · today</div></div>
+</div>
+<div style="box-sizing:border-box;padding:10px;background:rgba(11,16,32,.55);border:1px solid rgba(124,160,255,.14);border-radius:10px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Activity · 12 weeks</span><span style="font-size:8px;color:#7C8AA8">tokens / day</span></div>
+<svg width="252" height="68" style="display:block"><sc-for list="{{ heat }}" as="h" hint-placeholder-count="84"><rect x="{{ h.x }}" y="{{ h.y }}" width="19" height="8" rx="2" fill="#2FD4FF" style="opacity:{{ h.o }}"></rect></sc-for></svg>
+</div>
+</div>
+</div>
+<div style="flex:1;min-height:0;border-top:1px solid rgba(124,160,255,.12);padding:6px 16px 8px;display:flex;flex-direction:column;gap:4px;position:relative;background:rgba(5,7,13,.6)">
+<div style="display:flex;justify-content:space-between;align-items:center;height:16px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Thought stream · all agents</span><div style="display:flex;align-items:center;gap:6px;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#7C8AA8"><span>blur thoughts</span><span style="width:22px;height:12px;border-radius:6px;border:1px solid {{ toggleBorder }};background:{{ toggleBg }};position:relative;display:inline-block"><span style="position:absolute;top:2px;left:{{ toggleLeft }};width:6px;height:6px;border-radius:3px;background:#E6ECFF"></span></span></div></div>
+<div style="display:flex;flex-direction:column;gap:2px;font-size:10px;line-height:14px">
+<sc-for list="{{ stream }}" as="s" hint-placeholder-count="6">
+<div style="display:grid;grid-template-columns:56px 84px 72px 1fr;gap:10px;white-space:nowrap;overflow:hidden"><span style="color:#7C8AA8">{{ s.t }}</span><span style="color:{{ s.mc }};font-weight:500">{{ s.ag }}</span><span style="color:{{ s.ac }};font-size:9px;letter-spacing:.08em;text-transform:uppercase">{{ s.glyph }} {{ s.act }}</span><span class="th" style="color:#C7D0E8;overflow:hidden;text-overflow:ellipsis">{{ s.text }}</span></div>
+</sc-for>
+</div>
+<span style="position:absolute;right:16px;bottom:8px;width:6px;height:11px;background:#2FD4FF;animation:blink 1s steps(1) infinite"></span>
+</div>
+</div>
+</div>
+<!-- 2b loop radar detail -->
+<div id="2b" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+<div style="display:flex;align-items:baseline;gap:8px;font-size:11px;color:#7C8AA8"><a href="#2b" style="font-size:10px;font-weight:600;padding:2px 6px;background:rgba(230,236,255,.1);color:#E6ECFF;border-radius:4px">2b</a><span style="color:#E6ECFF;font-weight:600">Loop radar · expanded</span><span>"loops" hero tab</span></div>
+<div style="width:400px;height:320px;box-sizing:border-box;position:relative;overflow:hidden;border-radius:12px;background:radial-gradient(90% 60% at 50% 0%,#0B1020 0%,#05070D 70%);border:1px solid rgba(124,160,255,.16);padding:12px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Loop radar · <span style="color:#E6ECFF">lantern</span></span><span style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#FF3B5C">looping · ×4</span></div>
+<svg width="280" height="280" style="position:absolute;left:0;top:28px;overflow:visible">
+<circle cx="140" cy="140" r="108" fill="none" stroke="rgba(124,160,255,.06)" stroke-width="1"></circle>
+<path d="{{ radarTrailD }}" fill="none" stroke="#3DFF7A" stroke-width="1.25" stroke-dasharray="3 3" style="opacity:.35"></path>
+<sc-for list="{{ radarRings }}" as="r" hint-placeholder-count="4"><path d="{{ r.d }}" fill="none" stroke="{{ r.color }}" stroke-width="{{ r.w }}" stroke-dasharray="{{ r.dash }}" stroke-linecap="round" style="opacity:{{ r.op }};animation:{{ r.anim }}"></path><circle cx="{{ r.fx }}" cy="{{ r.fy }}" r="3" fill="#05070D" stroke="#FF3B5C" stroke-width="1.25"></circle></sc-for>
+<circle cx="140" cy="140" r="12" fill="rgba(255,176,32,.15)" stroke="#FFB020" stroke-width="1.5" style="filter:drop-shadow(0 0 6px #FFB020)"></circle>
+<circle cx="140" cy="140" r="20" fill="none" stroke="rgba(230,236,255,.2)" stroke-width="1" stroke-dasharray="2 5" style="transform-origin:140px 140px;animation:spin 6s linear infinite"></circle>
+</svg>
+<div style="position:absolute;left:129px;top:159px;width:22px;text-align:center;font-size:10px;color:#FFB020;line-height:1">✎</div>
+<div style="position:absolute;left:250px;top:28px;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#3DFF7A;white-space:nowrap">breakout → passes</div>
+<div style="position:absolute;left:296px;top:60px;width:92px;display:flex;flex-direction:column;gap:6px;font-size:8px;line-height:1.5;color:#7C8AA8">
+<div><span style="color:#E6ECFF;font-weight:600">cycle</span><br>Edit → Bash pytest → fail</div>
+<div><span style="color:#FFB020">○ iter 1</span> 42s · 2.1k</div><div><span style="color:#FF7A45">○ iter 2</span> 38s · 1.9k</div><div><span style="color:#FF3B5C">○ iter 3</span> 51s · 2.4k</div><div><span style="color:#FF3B5C;font-weight:600">● iter 4</span> running…</div>
+<div style="margin-top:4px"><span style="color:#E6ECFF">same error</span> 3× — suggest intervene</div>
+<div style="padding:4px 6px;border-radius:6px;border:1px solid rgba(255,59,92,.5);color:#FF3B5C;text-align:center;letter-spacing:.1em;text-transform:uppercase">interrupt</div>
+</div>
+<div style="position:absolute;left:12px;bottom:10px;font-size:8px;color:#7C8AA8;letter-spacing:.06em">ring = one iteration · r 26 + 20·i · ● = fail point at 200° · color amber→red with i</div>
+</div>
+</div>
+<!-- 2c progress ring detail -->
+<div id="2c" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+<div style="display:flex;align-items:baseline;gap:8px;font-size:11px;color:#7C8AA8"><a href="#2c" style="font-size:10px;font-weight:600;padding:2px 6px;background:rgba(230,236,255,.1);color:#E6ECFF;border-radius:4px">2c</a><span style="color:#E6ECFF;font-weight:600">Progress ring · card hover</span><span>plan from agent todo list</span></div>
+<div style="width:300px;height:320px;box-sizing:border-box;position:relative;overflow:hidden;border-radius:12px;background:radial-gradient(90% 60% at 50% 0%,#0B1020 0%,#05070D 70%);border:1px solid rgba(124,160,255,.16);padding:12px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:12px"><div style="position:relative;width:56px;height:56px;flex:none"><svg width="56" height="56" style="display:block;overflow:visible"><circle cx="28" cy="28" r="23" fill="none" stroke="rgba(124,160,255,.14)" stroke-width="4"></circle><path d="{{ bigProg }}" fill="none" stroke="#F4F7FF" stroke-width="4" stroke-linecap="round" style="filter:drop-shadow(0 0 6px #F4F7FF)"></path></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1"><span style="font-size:12px;font-weight:600">3/7</span><span style="font-size:6px;letter-spacing:.1em;color:#7C8AA8;margin-top:2px">STEPS</span></div></div><div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:12px;font-weight:600">orbit-core</span><span style="font-size:9px;color:#7C8AA8;white-space:nowrap">43% · eta <span style="color:#E6ECFF">~18m</span> @ 18.4k/min</span><span style="font-size:8px;color:#7C8AA8">est. 610k tokens remaining</span></div></div>
+<div style="display:flex;flex-direction:column;gap:4px;font-size:9px;line-height:16px">
+<sc-for list="{{ plan }}" as="p" hint-placeholder-count="7"><div style="display:grid;grid-template-columns:14px 1fr 44px;gap:8px;align-items:center;color:{{ p.color }}"><span style="font-size:10px">{{ p.mark }}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.text }}</span><span style="text-align:right;color:#7C8AA8;font-size:8px">{{ p.meta }}</span></div></sc-for>
+</div>
+<div style="margin-top:auto;font-size:8px;color:#7C8AA8;line-height:1.5;letter-spacing:.04em">card ring 28×28 stroke 2.5 r11 · hover ring 56×56 stroke 4 r23 · fill = done/total · color = model ring (green when complete, slate when blocked) · arc grows 400ms cubic-bezier(.2,.8,.2,1) per step · eta = remaining steps × mean step tokens ÷ tpm</div>
+</div>
+</div>
+</div>
+<sc-if value="{{ notes }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1360px;font-size:10px;line-height:1.6;color:#7C8AA8">
+<div><div style="color:#E6ECFF;font-weight:600;margin-bottom:4px">Context brain</div>5 layers left→right: prompt · context files · tools · reasoning steps · output — x 48/200/352/504/640 · node r = 4 + √(tokens/60), clamp 5–17 · stroke 1.25 · active this turn: fill 35%, glow 8px, breathe 1.6–2.8s (period from recency); dormant: fill 12%, opacity .35 · edges cubic .75px @ 8–22% (weight = co-activation count); hot edges 1.25px @ 70% carry 3px particles (1.4–2.6s linear) · bottom bar = context window 200k, segments system/files/tool-results/thinking, white tick = compaction threshold</div>
+<div><div style="color:#E6ECFF;font-weight:600;margin-bottom:4px">Loop radar</div>center = the tool being retried (amber Edit glyph) · each iteration adds an orbit ring r 26 + 20·i, dashed "2 3" 1.25px; current iteration solid 2px, open arc to 250°, pulseRed 1.2s · ring color interpolates amber #FFB020 → #FF7A45 → red #FF3B5C · fail marker ● r3 at 200° · on success the ring breaks out along a green dashed tangent · mini 64×64: r 8 + 6·i · triggers "interrupt" affordance at same-error ×3</div>
+<div><div style="color:#E6ECFF;font-weight:600;margin-bottom:4px">Progress ring</div>source: agent todo list (done / total) · card: 28×28, stroke 2.5, r11, steps label 7/600 inside, eta 8px under name · color = model accent; #3DFF7A when complete, #4A5568 when blocked · header adds "15/30 steps" across agents · hover expands to 56×56 with plan checklist: ✓ done ink · ◐ current in activity color · ○ pending mute · ✕ failed red</div>
+</div>
+</sc-if>
+<p style="margin:0;font-size:12px;line-height:1.5;color:#7C8AA8">Try next: "put the loop radar in the compact widget's alert state" · "make the brain view the default hero and move flow to a tab" · "show progress rings on the compact rows"</p>
+</section>
+<section id="t1" style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;align-items:baseline;gap:12px"><a href="#t1" style="font-size:10px;font-weight:600;padding:3px 7px;background:#E6ECFF;color:#05070D;border-radius:4px">1</a><span style="font-size:13px;font-weight:600">Agent HUD — compact widget, mini, dashboard, component sheet</span><span style="font-size:11px;color:#7C8AA8">semantic colors: thinking #B36BFF · reading #2FD4FF · editing #FFB020 · running #3DFF7A · error #FF3B5C · waiting #4A5568 · subagent #17D4B0</span></div>
+
+<!-- compact widgets -->
+<div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+<sc-for list="{{ widgets }}" as="w" hint-placeholder-count="3">
+<div id="{{ w.id }}" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+<div style="display:flex;align-items:baseline;gap:8px;font-size:11px;color:#7C8AA8"><a href="#{{ w.id }}" style="font-size:10px;font-weight:600;padding:2px 6px;background:rgba(230,236,255,.1);color:#E6ECFF;border-radius:4px">{{ w.id }}</a><span style="color:#E6ECFF;font-weight:600">Compact 320 · {{ w.title }}</span><span>{{ w.sub }}</span></div>
+<div style="width:320px;height:320px;box-sizing:border-box;position:relative;overflow:hidden;border-radius:16px;background:radial-gradient(130% 90% at 50% 0%,#0B1020 0%,#05070D 72%);border:1px solid rgba(124,160,255,.16);box-shadow:0 0 0 1px rgba(0,0,0,.7),0 12px 40px rgba(0,0,0,.5),0 0 48px rgba(47,212,255,.05),inset 0 1px 0 rgba(255,255,255,.04)">
+<div style="position:absolute;inset:0;background-image:linear-gradient(rgba(124,160,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(124,160,255,.06) 1px,transparent 1px);background-size:16px 16px;mask-image:radial-gradient(70% 50% at 50% 30%,#000 0%,transparent 100%);pointer-events:none"></div>
+<div style="position:absolute;left:16px;top:12px;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Agent HUD</div>
+<div style="position:absolute;right:16px;top:12px;display:flex;gap:6px;align-items:center;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500"><span style="width:6px;height:6px;border-radius:3px;background:{{ w.statusColor }};box-shadow:0 0 8px {{ w.statusColor }}"></span>{{ w.statusText }}</div>
+<svg width="320" height="160" style="position:absolute;left:0;top:8px;overflow:visible">
+<circle cx="160" cy="84" r="68" fill="none" stroke="rgba(124,160,255,.06)" stroke-width="1"></circle>
+<circle cx="160" cy="84" r="58" fill="none" stroke="rgba(124,160,255,.10)" stroke-width="8"></circle>
+<sc-for list="{{ w.segments }}" as="s" hint-placeholder-count="5">
+<path d="{{ s.d }}" fill="none" stroke="{{ s.color }}" stroke-width="8" stroke-linecap="round" style="opacity:{{ s.op }};filter:{{ s.glow }};animation:{{ s.anim }}"></path>
+</sc-for>
+<circle cx="160" cy="84" r="46" fill="none" stroke="rgba(230,236,255,.22)" stroke-width="1" stroke-dasharray="2 6" style="transform-origin:160px 84px;animation:{{ w.ringAnim }}"></circle>
+<path d="{{ sweep }}" fill="none" stroke="{{ w.sweepColor }}" stroke-width="1.5" stroke-linecap="round" style="transform-origin:160px 84px;animation:{{ w.ringAnim }};filter:drop-shadow(0 0 4px {{ w.sweepColor }})"></path>
+</svg>
+<div style="position:absolute;left:0;right:0;top:66px;text-align:center;line-height:1"><div style="font-size:26px;font-weight:600;letter-spacing:-.02em;color:#E6ECFF">{{ w.tpm }}</div><div style="font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;margin-top:4px">tok/min</div><div style="font-size:10px;color:#7C8AA8;margin-top:6px">today <span style="color:#E6ECFF">{{ w.today }}</span></div></div>
+<div style="position:absolute;left:0;right:0;top:160px;display:flex;flex-direction:column">
+<sc-for list="{{ w.rows }}" as="r" hint-placeholder-count="5">
+<div style="height:24px;display:grid;grid-template-columns:8px 92px 1fr 76px;gap:8px;align-items:center;padding:0 16px;opacity:{{ r.op }}">
+<span style="width:6px;height:6px;border-radius:3px;background:{{ r.color }};box-shadow:0 0 6px {{ r.color }}"></span>
+<span style="font-size:11px;font-weight:500;color:#E6ECFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span>
+<svg width="72" height="14" style="display:block"><path d="{{ r.d }}" fill="none" stroke="{{ r.color }}" stroke-width="1" stroke-linejoin="round" style="opacity:.85"></path></svg>
+<span style="display:flex;gap:6px;align-items:center;justify-content:flex-end;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:{{ r.color }}"><span style="font-size:10px;letter-spacing:0">{{ r.glyph }}</span>{{ r.label }}</span>
+</div>
+</sc-for>
+</div>
+<div style="position:absolute;left:16px;right:16px;bottom:8px;height:24px;border-top:1px solid rgba(124,160,255,.12);overflow:hidden;display:flex;align-items:center;mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)">
+<div style="display:flex;white-space:nowrap;font-size:10px;color:{{ w.tc }};animation:ticker 18s linear infinite;width:max-content"><span style="padding-right:48px">{{ w.ticker }}</span><span style="padding-right:48px">{{ w.ticker }}</span></div>
+</div>
+</div>
+</div>
+</sc-for>
+
+<!-- mini -->
+<div id="1d" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+<div style="display:flex;align-items:baseline;gap:8px;font-size:11px;color:#7C8AA8"><a href="#1d" style="font-size:10px;font-weight:600;padding:2px 6px;background:rgba(230,236,255,.1);color:#E6ECFF;border-radius:4px">1d</a><span style="color:#E6ECFF;font-weight:600">Mini 160</span><span>ring + tok/min</span></div>
+<div style="width:160px;height:160px;box-sizing:border-box;position:relative;overflow:hidden;border-radius:14px;background:radial-gradient(130% 90% at 50% 0%,#0B1020 0%,#05070D 72%);border:1px solid rgba(124,160,255,.16);box-shadow:0 0 0 1px rgba(0,0,0,.7),0 12px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.04)">
+<svg width="160" height="160" style="position:absolute;left:0;top:0;overflow:visible">
+<circle cx="80" cy="74" r="50" fill="none" stroke="rgba(124,160,255,.10)" stroke-width="6"></circle>
+<sc-for list="{{ miniSegs }}" as="s" hint-placeholder-count="5">
+<path d="{{ s.d }}" fill="none" stroke="{{ s.color }}" stroke-width="6" stroke-linecap="round" style="opacity:{{ s.op }};filter:{{ s.glow }};animation:{{ s.anim }}"></path>
+</sc-for>
+<circle cx="80" cy="74" r="40" fill="none" stroke="rgba(230,236,255,.22)" stroke-width="1" stroke-dasharray="2 6" style="transform-origin:80px 74px;animation:spin 12s linear infinite"></circle>
+<path d="{{ miniSweep }}" fill="none" stroke="#2FD4FF" stroke-width="1.5" stroke-linecap="round" style="transform-origin:80px 74px;animation:spin 12s linear infinite;filter:drop-shadow(0 0 4px #2FD4FF)"></path>
+</svg>
+<div style="position:absolute;left:0;right:0;top:60px;text-align:center;line-height:1"><div style="font-size:20px;font-weight:600;letter-spacing:-.02em">{{ busyTpm }}</div><div style="font-size:7px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;margin-top:4px">tok/min</div></div>
+<div style="position:absolute;left:0;right:0;bottom:10px;text-align:center;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#7C8AA8"><span style="color:#3DFF7A">4</span> active · 5 sessions</div>
+</div>
+</div>
+</div>
+
+<sc-if value="{{ notes }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;max-width:1360px;font-size:10px;line-height:1.6;color:#7C8AA8">
+<div><div style="color:#E6ECFF;font-weight:600;margin-bottom:4px">Widget spec</div>320×320 · radius 16 · bg radial #0B1020→#05070D · hairline 1px rgba(124,160,255,.16) · grid 16px @ 6% masked · label 9px/500 tracking .14em uppercase #7C8AA8 · rows 24px · row name 11px/500 · ticker 10px, 24px tall</div>
+<div><div style="color:#E6ECFF;font-weight:600;margin-bottom:4px">Reactor gauge</div>track r58 stroke 8 rgba(124,160,255,.10) · segments 360°/n, 10° gap, stroke 8 round caps · color = activity · opacity = .45 + .55·(tpm/max) (waiting .3) · glow drop-shadow 0 0 6px color · inner dashed ring r46 1px "2 6" · sweep arc 60° stroke 1.5 cyan · center 26/600 −2% tracking</div>
+<div><div style="color:#E6ECFF;font-weight:600;margin-bottom:4px">Motion</div>segment breathe: opacity .55→1, ease-in-out, period 4s idle → 2s @ 20k tpm (driven by tpm) · sweep: rotate 360° linear 12s (40s idle) · error pulse: opacity .45→1 + glow 2→12px, 1.2s ease-in-out, on loop count ≥ 2 · heartbeat: scroll 1px/120ms, new sample per token event · ticker: translateX −50%, 18s linear, restarts on new thought</div>
+<div><div style="color:#E6ECFF;font-weight:600;margin-bottom:4px">Mini</div>160×160 · radius 14 · ring r50 stroke 6 · dashed ring r40 · number 20/600 · footer 9px tracked · same segment data & motion as compact</div>
+</div>
+</sc-if>
+
+<!-- dashboard -->
+<div id="1e" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+<div style="display:flex;align-items:baseline;gap:8px;font-size:11px;color:#7C8AA8"><a href="#1e" style="font-size:10px;font-weight:600;padding:2px 6px;background:rgba(230,236,255,.1);color:#E6ECFF;border-radius:4px">1e</a><span style="color:#E6ECFF;font-weight:600">Expanded dashboard 1280×800</span><span>orbit-core selected · flow graph · lanes · stats · thought stream</span></div>
+<div style="width:1280px;height:800px;box-sizing:border-box;position:relative;overflow:hidden;border-radius:12px;background:radial-gradient(90% 60% at 50% 0%,#0B1020 0%,#05070D 70%);border:1px solid rgba(124,160,255,.16);box-shadow:0 0 0 1px rgba(0,0,0,.7),0 20px 60px rgba(0,0,0,.6);display:flex;flex-direction:column">
+<div style="position:absolute;inset:0;background-image:linear-gradient(rgba(124,160,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(124,160,255,.045) 1px,transparent 1px);background-size:32px 32px;mask-image:radial-gradient(60% 50% at 50% 40%,#000 0%,transparent 100%);pointer-events:none"></div>
+<!-- header -->
+<div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid rgba(124,160,255,.12);position:relative">
+<div style="display:flex;align-items:center;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase">Agent HUD</span><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8">mission control</span></div>
+<div style="display:flex;gap:24px;font-size:10px;color:#7C8AA8"><span><span style="color:#E6ECFF;font-weight:600;font-size:12px">46.5k</span> tok/min</span><span><span style="color:#E6ECFF;font-weight:600;font-size:12px">3.12M</span> today</span><span><span style="color:#E6ECFF;font-weight:600;font-size:12px">$41.27</span> est.</span><span><span style="color:#3DFF7A;font-weight:600;font-size:12px">4</span>/5 active</span></div>
+<div style="display:flex;align-items:center;gap:12px;font-size:10px;color:#7C8AA8"><span>14:32:07</span><span style="width:6px;height:6px;border-radius:3px;background:#3DFF7A;box-shadow:0 0 8px #3DFF7A;animation:breathe 2s ease-in-out infinite"></span></div>
+</div>
+<!-- body -->
+<div style="flex:none;height:632px;display:grid;grid-template-columns:264px 704px 296px;gap:8px;padding:8px;box-sizing:border-box;position:relative">
+<!-- left rail -->
+<div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 4px 0"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Agents · 5</span><span style="font-size:9px;color:#7C8AA8">sort: activity</span></div>
+<sc-for list="{{ cards }}" as="c" hint-placeholder-count="5">
+<div style="padding:10px 12px;border-radius:10px;border:1px solid {{ c.border }};background:{{ c.bg }};box-shadow:{{ c.shadow }};display:flex;flex-direction:column;gap:6px;box-sizing:border-box">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;font-weight:600">{{ c.name }}</span><span style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:8px;border:1px solid {{ c.mc }};color:{{ c.mc }}">{{ c.model }}</span></div>
+<div style="font-size:10px;color:#7C8AA8;display:flex;gap:6px;align-items:center;white-space:nowrap;overflow:hidden"><span style="opacity:.7">⎇</span>{{ c.branch }}</div>
+<div style="display:flex;justify-content:space-between;align-items:center;font-size:9px;letter-spacing:.1em;text-transform:uppercase"><span style="display:flex;gap:6px;align-items:center;color:{{ c.sc }}"><span style="width:6px;height:6px;border-radius:3px;background:{{ c.sc }};box-shadow:0 0 6px {{ c.sc }}"></span>{{ c.status }}</span><span style="color:#7C8AA8;letter-spacing:0">{{ c.elapsed }}</span></div>
+<svg width="216" height="4" style="display:block"><rect x="0" y="0" width="216" height="4" rx="2" fill="rgba(124,160,255,.12)"></rect><rect x="0" y="0" width="{{ c.ctxW }}" height="4" rx="2" fill="{{ c.ctxColor }}"></rect></svg>
+<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:9px;color:#7C8AA8;white-space:nowrap">ctx <span style="color:#E6ECFF">{{ c.ctxPct }}%</span> · <span style="color:#E6ECFF">{{ c.tokens }}</span></div><svg width="88" height="18" style="display:block"><path d="{{ c.hb }}" fill="none" stroke="{{ c.sc }}" stroke-width="1" stroke-linejoin="round" style="opacity:.9"></path></svg></div>
+</div>
+</sc-for>
+</div>
+<!-- center -->
+<div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+<div style="height:376px;box-sizing:border-box;padding:8px;background:rgba(11,16,32,.55);border:1px solid rgba(124,160,255,.14);border-radius:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03);position:relative;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;height:24px;padding:0 4px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500;white-space:nowrap">Thinking flow · <span style="color:#E6ECFF">orbit-core</span> · turn 7</span><div style="display:flex;gap:10px;flex:none;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#7C8AA8"><span style="color:#B36BFF">● thinking</span><span style="color:#2FD4FF">● read</span><span style="color:#FFB020">● edit</span><span style="color:#3DFF7A">● run</span><span style="color:#FF3B5C">● error</span><span style="color:#17D4B0">◌ subagent</span></div></div>
+<div style="position:relative;width:688px;height:322px;margin-top:6px">
+<svg width="688" height="322" style="position:absolute;left:0;top:0;overflow:visible">
+<sc-for list="{{ edges }}" as="e" hint-placeholder-count="12">
+<path d="{{ e.d }}" fill="none" stroke="{{ e.color }}" stroke-width="{{ e.w }}" stroke-dasharray="{{ e.dash }}" style="opacity:{{ e.op }}"></path>
+</sc-for>
+<sc-for list="{{ chipLinks }}" as="l" hint-placeholder-count="2"><path d="{{ l.d }}" fill="none" stroke="#FFB020" stroke-width="1" style="opacity:.5"></path></sc-for>
+<sc-for list="{{ nodes }}" as="n" hint-placeholder-count="12">
+<circle cx="{{ n.x }}" cy="{{ n.y }}" r="{{ n.rh }}" fill="{{ n.color }}" style="opacity:.09"></circle>
+<circle cx="{{ n.x }}" cy="{{ n.y }}" r="{{ n.r }}" fill="{{ n.fill }}" stroke="{{ n.color }}" stroke-width="1.5" stroke-dasharray="{{ n.dash }}" style="filter:{{ n.glow }}"></circle>
+</sc-for>
+<sc-for list="{{ cracks }}" as="k" hint-placeholder-count="2"><path d="{{ k.d }}" fill="none" stroke="#05070D" stroke-width="1.5" stroke-linejoin="round"></path></sc-for>
+<sc-for list="{{ chips }}" as="f" hint-placeholder-count="2">
+<rect x="{{ f.x }}" y="{{ f.y }}" width="92" height="16" rx="4" fill="rgba(255,176,32,.12)" stroke="#FFB020" stroke-width="1" style="opacity:.9"></rect>
+</sc-for>
+<rect x="546" y="193" width="28" height="14" rx="7" fill="#2A0A14" stroke="#FF3B5C" stroke-width="1" style="filter:drop-shadow(0 0 6px #FF3B5C)"></rect>
+<text x="560" y="203" text-anchor="middle" fill="#FF3B5C" font-size="9" font-weight="600" style="font-family:inherit">×3</text>
+</svg>
+<sc-for list="{{ nodes }}" as="n" hint-placeholder-count="12">
+<div style="position:absolute;left:{{ n.gl }};top:{{ n.gt }};width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:{{ n.gsz }};color:{{ n.color }};pointer-events:none;line-height:1">{{ n.glyph }}</div>
+<div style="position:absolute;left:{{ n.ll }};top:{{ n.lt }};width:88px;text-align:center;font-size:9px;letter-spacing:.06em;color:#E6ECFF;line-height:10px;pointer-events:none;white-space:nowrap">{{ n.label }}</div>
+<div style="position:absolute;left:{{ n.ll }};top:{{ n.st }};width:88px;text-align:center;font-size:8px;color:#7C8AA8;line-height:10px;pointer-events:none;white-space:nowrap">{{ n.sub }}</div>
+</sc-for>
+<sc-for list="{{ chips }}" as="f" hint-placeholder-count="2">
+<div style="position:absolute;left:{{ f.l }};top:{{ f.t }};width:92px;height:16px;box-sizing:border-box;padding:0 6px;display:flex;align-items:center;gap:5px;font-size:8px;line-height:1;pointer-events:none;white-space:nowrap"><span style="color:#FFB020;flex:1">{{ f.name }}</span><span style="color:#3DFF7A">{{ f.plus }}</span><span style="color:#FF3B5C">{{ f.minus }}</span></div>
+</sc-for>
+{{ particles }}
+<div style="position:absolute;left:452px;top:2px;width:204px;box-sizing:border-box;padding:8px 10px;border-radius:8px;background:rgba(11,16,32,.92);border:1px solid rgba(255,59,92,.5);box-shadow:0 0 20px rgba(255,59,92,.15),0 8px 24px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:4px;backdrop-filter:blur(8px)">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:10px;font-weight:600;color:#FF3B5C">Bash · failed</span><span style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#7C8AA8">selected</span></div>
+<div style="font-size:9px;color:#E6ECFF">pytest tests/test_retry.py -x</div>
+<div style="font-size:9px;color:#7C8AA8;white-space:nowrap">4.2s · 1.9k tok · exit 1 · iter 3/3</div>
+<div style="font-size:8px;color:#FF3B5C;opacity:.85;line-height:1.4">AssertionError: expected 3 retries, got 2</div>
+</div>
+</div>
+<div style="position:absolute;left:12px;bottom:6px;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#7C8AA8">node size = tokens · particles on active edge · dashed = subagent · ×n = loop iterations</div>
+</div>
+<!-- lanes -->
+<div style="height:232px;box-sizing:border-box;padding:8px;background:rgba(11,16,32,.55);border:1px solid rgba(124,160,255,.14);border-radius:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03);position:relative;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;height:24px;padding:0 4px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Activity lanes · last 60 min</span><div style="display:flex;gap:4px;font-size:8px;letter-spacing:.1em;text-transform:uppercase"><span style="padding:2px 6px;border-radius:6px;color:#7C8AA8;border:1px solid rgba(124,160,255,.14)">15m</span><span style="padding:2px 6px;border-radius:6px;color:#E6ECFF;border:1px solid rgba(47,212,255,.5);background:rgba(47,212,255,.1)">60m</span><span style="padding:2px 6px;border-radius:6px;color:#7C8AA8;border:1px solid rgba(124,160,255,.14)">6h</span></div></div>
+<div style="position:relative;width:688px;height:188px;margin-top:6px">
+<svg width="688" height="188" style="display:block;overflow:visible">
+<sc-for list="{{ lanes }}" as="ln" hint-placeholder-count="5">
+<g transform="{{ ln.tf }}">
+<rect x="96" y="6" width="560" height="14" rx="3" fill="rgba(124,160,255,.05)"></rect>
+<sc-for list="{{ ln.segs }}" as="s" hint-placeholder-count="10"><rect x="{{ s.x }}" y="6" width="{{ s.w }}" height="14" rx="2" fill="{{ s.color }}" style="opacity:.8"></rect></sc-for>
+<sc-for list="{{ ln.ticks }}" as="t" hint-placeholder-count="3"><rect x="{{ t.x }}" y="0" width="1.5" height="5" fill="#E6ECFF"></rect><rect x="{{ t.x }}" y="6" width="1" height="14" fill="#E6ECFF" style="opacity:.35"></rect></sc-for>
+</g>
+</sc-for>
+<line x1="658" y1="0" x2="658" y2="150" stroke="#2FD4FF" stroke-width="1.5" style="filter:drop-shadow(0 0 6px #2FD4FF);animation:playhead 2s ease-in-out infinite"></line>
+<text x="658" y="166" text-anchor="middle" fill="#2FD4FF" font-size="8" style="font-family:inherit;letter-spacing:.1em">NOW</text>
+<sc-for list="{{ axis }}" as="a" hint-placeholder-count="4"><line x1="{{ a.x }}" y1="0" x2="{{ a.x }}" y2="150" stroke="rgba(124,160,255,.08)" stroke-width="1"></line></sc-for>
+<text x="4" y="190" fill="#7C8AA8" font-size="8" style="font-family:inherit;letter-spacing:.06em">▎ tick = user prompt · lanes scroll left 1px / 6.4s · playhead breathes 2s</text>
+</svg>
+<sc-for list="{{ lanes }}" as="ln" hint-placeholder-count="5"><div style="position:absolute;left:4px;top:{{ ln.top }};font-size:10px;line-height:16px;color:#E6ECFF;pointer-events:none">{{ ln.name }}</div></sc-for>
+<sc-for list="{{ axis }}" as="a" hint-placeholder-count="4"><div style="position:absolute;left:{{ a.left }};top:158px;width:40px;text-align:center;font-size:8px;color:#7C8AA8;pointer-events:none">{{ a.t }}</div></sc-for>
+</div>
+</div>
+</div>
+<!-- right rail -->
+<div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+<div style="box-sizing:border-box;padding:10px;background:rgba(11,16,32,.55);border:1px solid rgba(124,160,255,.14);border-radius:10px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Token burn</span><div style="display:flex;gap:2px;font-size:8px;letter-spacing:.08em"><span style="padding:2px 6px;border-radius:6px;color:#7C8AA8">1h</span><span style="padding:2px 6px;border-radius:6px;color:#E6ECFF;border:1px solid rgba(47,212,255,.5);background:rgba(47,212,255,.1)">24h</span><span style="padding:2px 6px;border-radius:6px;color:#7C8AA8">7d</span></div></div>
+<svg width="252" height="72" style="display:block"><sc-for list="{{ areas }}" as="ar" hint-placeholder-count="4"><path d="{{ ar.d }}" fill="{{ ar.color }}" style="opacity:.55"></path><path d="{{ ar.line }}" fill="none" stroke="{{ ar.color }}" stroke-width="1"></path></sc-for><line x1="0" y1="71.5" x2="252" y2="71.5" stroke="rgba(124,160,255,.2)" stroke-width="1"></line></svg>
+<div style="display:flex;gap:10px;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:#7C8AA8"><span style="color:#2FD4FF">● input</span><span style="color:#FFB020">● output</span><span style="color:#17D4B0">● cache-read</span><span style="color:#B36BFF">● thinking</span></div>
+</div>
+<div style="box-sizing:border-box;padding:10px;background:rgba(11,16,32,.55);border:1px solid rgba(124,160,255,.14);border-radius:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Model mix</span><div style="display:flex;gap:8px;align-items:center"><svg width="64" height="64" style="display:block"><sc-for list="{{ donut }}" as="d" hint-placeholder-count="4"><path d="{{ d.d }}" fill="none" stroke="{{ d.color }}" stroke-width="8" style="opacity:.9"></path></sc-for></svg><div style="display:flex;flex-direction:column;gap:2px;font-size:8px;color:#7C8AA8;white-space:nowrap"><sc-for list="{{ donut }}" as="d" hint-placeholder-count="4"><span><span style="color:{{ d.color }}">●</span> {{ d.name }} <span style="color:#E6ECFF">{{ d.pct }}%</span></span></sc-for></div></div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Cache hit</span><div style="position:relative;width:64px;height:64px"><svg width="64" height="64" style="display:block;overflow:visible"><path d="{{ gaugeBg }}" fill="none" stroke="rgba(124,160,255,.12)" stroke-width="6" stroke-linecap="round"></path><path d="{{ gaugeVal }}" fill="none" stroke="#17D4B0" stroke-width="6" stroke-linecap="round" style="filter:drop-shadow(0 0 5px #17D4B0)"></path></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1"><span style="font-size:14px;font-weight:600">71%</span><span style="font-size:7px;color:#7C8AA8;margin-top:2px">1.9M / 2.7M</span></div></div></div>
+</div>
+<div style="box-sizing:border-box;padding:10px;background:rgba(11,16,32,.55);border:1px solid rgba(124,160,255,.14);border-radius:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div><div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Est. cost today</div><div style="font-size:20px;font-weight:600;letter-spacing:-.02em;margin-top:4px">$41.27</div><div style="font-size:8px;color:#7C8AA8">+$3.10 / h at current burn</div></div>
+<div><div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Loops &amp; errors</div><div style="display:flex;gap:12px;margin-top:4px;align-items:baseline"><span style="font-size:20px;font-weight:600;letter-spacing:-.02em;color:#FFB020">7</span><span style="font-size:8px;color:#7C8AA8">loops</span><span style="font-size:20px;font-weight:600;letter-spacing:-.02em;color:#FF3B5C">12</span><span style="font-size:8px;color:#7C8AA8">errors</span></div></div>
+</div>
+<div style="box-sizing:border-box;padding:10px;background:rgba(11,16,32,.55);border:1px solid rgba(124,160,255,.14);border-radius:10px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+<div style="display:flex;flex-direction:column;gap:5px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Tool usage</span><sc-for list="{{ tools }}" as="t" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:34px 1fr 28px;gap:6px;align-items:center;font-size:9px"><span style="color:#E6ECFF">{{ t.name }}</span><svg width="52" height="4" style="display:block"><rect x="0" y="0" width="52" height="4" rx="2" fill="rgba(124,160,255,.1)"></rect><rect x="0" y="0" width="{{ t.w }}" height="4" rx="2" fill="{{ t.color }}"></rect></svg><span style="color:#7C8AA8;text-align:right">{{ t.v }}</span></div></sc-for></div>
+<div style="display:flex;flex-direction:column;gap:5px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Repos</span><sc-for list="{{ repos }}" as="r" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:56px 1fr 34px;gap:6px;align-items:center;font-size:9px"><span style="color:#E6ECFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span><svg width="24" height="4" style="display:block"><rect x="0" y="0" width="24" height="4" rx="2" fill="rgba(124,160,255,.1)"></rect><rect x="0" y="0" width="{{ r.w }}" height="4" rx="2" fill="{{ r.mc }}"></rect></svg><span style="color:#7C8AA8;text-align:right">{{ r.v }}</span></div></sc-for></div>
+</div>
+<div style="box-sizing:border-box;padding:10px;background:rgba(11,16,32,.55);border:1px solid rgba(124,160,255,.14);border-radius:10px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Activity · 12 weeks</span><span style="font-size:8px;color:#7C8AA8">tokens / day</span></div>
+<svg width="252" height="68" style="display:block"><sc-for list="{{ heat }}" as="h" hint-placeholder-count="84"><rect x="{{ h.x }}" y="{{ h.y }}" width="19" height="8" rx="2" fill="#2FD4FF" style="opacity:{{ h.o }}"></rect></sc-for></svg>
+</div>
+</div>
+</div>
+<!-- thought stream -->
+<div style="flex:1;min-height:0;border-top:1px solid rgba(124,160,255,.12);padding:6px 16px 8px;display:flex;flex-direction:column;gap:4px;position:relative;background:rgba(5,7,13,.6)">
+<div style="display:flex;justify-content:space-between;align-items:center;height:16px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Thought stream · all agents</span><div style="display:flex;align-items:center;gap:6px;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#7C8AA8"><span>blur thoughts</span><span style="width:22px;height:12px;border-radius:6px;border:1px solid {{ toggleBorder }};background:{{ toggleBg }};position:relative;display:inline-block"><span style="position:absolute;top:2px;left:{{ toggleLeft }};width:6px;height:6px;border-radius:3px;background:#E6ECFF"></span></span></div></div>
+<div style="display:flex;flex-direction:column;gap:2px;font-size:10px;line-height:14px">
+<sc-for list="{{ stream }}" as="s" hint-placeholder-count="6">
+<div style="display:grid;grid-template-columns:56px 84px 72px 1fr;gap:10px;white-space:nowrap;overflow:hidden"><span style="color:#7C8AA8">{{ s.t }}</span><span style="color:{{ s.mc }};font-weight:500">{{ s.ag }}</span><span style="color:{{ s.ac }};font-size:9px;letter-spacing:.08em;text-transform:uppercase">{{ s.glyph }} {{ s.act }}</span><span class="th" style="color:#C7D0E8;overflow:hidden;text-overflow:ellipsis">{{ s.text }}</span></div>
+</sc-for>
+</div>
+<span style="position:absolute;right:16px;bottom:8px;width:6px;height:11px;background:#2FD4FF;animation:blink 1s steps(1) infinite"></span>
+</div>
+</div>
+</div>
+
+<sc-if value="{{ notes }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;max-width:1360px;font-size:10px;line-height:1.6;color:#7C8AA8">
+<div><div style="color:#E6ECFF;font-weight:600;margin-bottom:4px">Layout</div>1280×800 · header 40 · body grid 264 / 704 / 296, gap 8, pad 8 · graph 384, lanes 240 · thought stream 128 · panels rgba(11,16,32,.55), hairline rgba(124,160,255,.14), radius 10, pad 8–10 · agent card pad 10/12, radius 10, ctx bar 4px · selected card: border rgba(179,107,255,.55), glow 0 0 24px 18%</div>
+<div><div style="color:#E6ECFF;font-weight:600;margin-bottom:4px">Flow graph</div>node r = 10 + 0.9·√(tokens/100), clamp 10–26 · stroke 1.5 · halo r+8 @ 9% · fill color @ 12% · edges cubic, 1.25px @ 55%, color = target · loop edge dashed "4 3" red + ×n pill · error node: fill 25% + 2 dark cracks 1.5px · subagent: dashed "3 3" teal · file chip 92×16 r4 amber 12% fill</div>
+<div><div style="color:#E6ECFF;font-weight:600;margin-bottom:4px">Motion</div>particles: 3 × 4px dots on active edge, offset-path, 1.6s linear, stagger .5s, driven by tool-call in progress · new node: scale .6→1 + glow 0→8px, 400ms cubic-bezier(.2,.8,.2,1) · card select: border/glow 220ms ease-out · lanes scroll 1px/6.4s (560px = 60min) · playhead opacity .55→1 2s · stream cursor blink 1s steps(1) · header dot breathe 2s</div>
+<div><div style="color:#E6ECFF;font-weight:600;margin-bottom:4px">Stats</div>burn chart 252×80 stacked areas 55% + 1px top line · donut r24 stroke 8, 3° gaps · gauge 270° arc r26 stroke 6 · heatmap 12×7 cells 19×8 r2 cyan, opacity .08–.95 · bar lists 4px tracks r2 · big numbers 20/600 −2% tracking</div>
+</div>
+</sc-if>
+
+<!-- component sheet -->
+<div id="1f" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+<div style="display:flex;align-items:baseline;gap:8px;font-size:11px;color:#7C8AA8"><a href="#1f" style="font-size:10px;font-weight:600;padding:2px 6px;background:rgba(230,236,255,.1);color:#E6ECFF;border-radius:4px">1f</a><span style="color:#E6ECFF;font-weight:600">Component sheet</span><span>tokens · type · gauge · sparkline · nodes · lane · card · badges · empty state · motion</span></div>
+<div style="width:1280px;box-sizing:border-box;padding:24px;border-radius:12px;background:#05070D;border:1px solid rgba(124,160,255,.16);display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Color tokens</span>
+<div style="display:flex;flex-wrap:wrap;gap:16px"><sc-for list="{{ tokens }}" as="t" hint-placeholder-count="12"><div style="width:132px;display:flex;flex-direction:column;gap:6px"><div style="height:36px;border-radius:8px;background:{{ t.hex }};border:1px solid rgba(124,160,255,.16);box-shadow:{{ t.glow }}"></div><div style="font-size:10px;font-weight:600">{{ t.name }}</div><div style="font-size:9px;color:#7C8AA8">{{ t.hex }} · {{ t.use }}</div></div></sc-for></div>
+<div style="display:flex;gap:16px;align-items:center;margin-top:4px"><span style="font-size:9px;color:#7C8AA8;width:100px">model rings</span><sc-for list="{{ models }}" as="m" hint-placeholder-count="4"><div style="display:flex;gap:8px;align-items:center"><svg width="24" height="24"><circle cx="12" cy="12" r="9" fill="none" stroke="{{ m.hex }}" stroke-width="2" style="filter:drop-shadow(0 0 4px {{ m.hex }})"></circle></svg><span style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:8px;border:1px solid {{ m.hex }};color:{{ m.hex }}">{{ m.name }}</span><span style="font-size:9px;color:#7C8AA8">{{ m.hex }}</span></div></sc-for></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Type scale · JetBrains Mono</span>
+<div style="display:grid;grid-template-columns:1fr 200px;gap:6px 16px;align-items:baseline">
+<span style="font-size:26px;font-weight:600;letter-spacing:-.02em">48.2k</span><span style="font-size:9px;color:#7C8AA8">display 26/600 · −2% · tabular</span>
+<span style="font-size:20px;font-weight:600;letter-spacing:-.02em">$41.27</span><span style="font-size:9px;color:#7C8AA8">number 20/600 · −2%</span>
+<span style="font-size:12px;font-weight:600">orbit-core</span><span style="font-size:9px;color:#7C8AA8">title 12/600</span>
+<span style="font-size:11px;font-weight:500">fix/retry-race</span><span style="font-size:9px;color:#7C8AA8">body 11/500 · 10/400 secondary</span>
+<span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Section label</span><span style="font-size:9px;color:#7C8AA8">label 9/500 · +14% · uppercase</span>
+<span style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#7C8AA8">micro badge</span><span style="font-size:9px;color:#7C8AA8">micro 8/400 · +10% · uppercase</span>
+</div>
+<div style="font-size:9px;color:#7C8AA8;line-height:1.6;margin-top:4px">Spacing 4/8 grid · radii 16 (widget) · 14 (mini) · 10 (panel, card) · 8 (chip, badge) · 4 (file chip, bars) · hairline 1px rgba(124,160,255,.14–.16) · glow = drop-shadow 0 0 6px color · panel fill rgba(11,16,32,.55)</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Gauge · sparkline · lane segments</span>
+<div style="display:flex;gap:24px;align-items:flex-start">
+<svg width="120" height="120" style="display:block;overflow:visible"><circle cx="60" cy="60" r="44" fill="none" stroke="rgba(124,160,255,.10)" stroke-width="7"></circle><sc-for list="{{ sheetSegs }}" as="s" hint-placeholder-count="5"><path d="{{ s.d }}" fill="none" stroke="{{ s.color }}" stroke-width="7" stroke-linecap="round" style="opacity:{{ s.op }};filter:{{ s.glow }}"></path></sc-for><circle cx="60" cy="60" r="34" fill="none" stroke="rgba(230,236,255,.22)" stroke-width="1" stroke-dasharray="2 6"></circle><path d="{{ sheetSweep }}" fill="none" stroke="#2FD4FF" stroke-width="1.5" stroke-linecap="round"></path><text x="60" y="64" text-anchor="middle" fill="#E6ECFF" font-size="16" font-weight="600" style="font-family:inherit">46.5k</text></svg>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:9px;color:#7C8AA8"><div>reactor: track stroke 7–8 · segment = agent, gap 10° · opacity .45+.55·tpm/max · glyph none · center number</div>
+<div style="display:flex;gap:12px;align-items:center"><svg width="120" height="20" style="display:block"><path d="{{ sheetSpark }}" fill="none" stroke="#B36BFF" stroke-width="1" stroke-linejoin="round"></path></svg><span>heartbeat sparkline · 24 samples · 1px stroke · amp .7 active / .08 waiting</span></div>
+<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><sc-for list="{{ laneSw }}" as="l" hint-placeholder-count="6"><span style="display:flex;gap:4px;align-items:center"><span style="width:28px;height:14px;border-radius:2px;background:{{ l.hex }};opacity:.8"></span><span>{{ l.name }}</span></span></sc-for></div>
+<div>lane segment 14px tall r2 @ 80% · prompt tick 1.5×5 ink + 1px stem 35%</div></div>
+</div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Node types</span>
+<div style="display:flex;gap:24px;flex-wrap:wrap"><sc-for list="{{ nodeTypes }}" as="n" hint-placeholder-count="7"><div style="width:140px;display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center"><div style="position:relative;width:72px;height:72px"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:{{ n.gsz }};color:{{ n.color }};pointer-events:none">{{ n.glyph }}</div><svg width="72" height="72" style="display:block;overflow:visible"><circle cx="36" cy="36" r="{{ n.rh }}" fill="{{ n.color }}" style="opacity:.09"></circle><circle cx="36" cy="36" r="{{ n.r }}" fill="{{ n.fill }}" stroke="{{ n.color }}" stroke-width="1.5" stroke-dasharray="{{ n.dash }}" style="filter:{{ n.glow }}"></circle><path d="{{ n.crack }}" fill="none" stroke="#05070D" stroke-width="1.5"></path></svg></div><span style="font-size:10px;font-weight:600;color:{{ n.color }}">{{ n.label }}</span><span style="font-size:9px;color:#7C8AA8;line-height:1.5">{{ n.spec }}</span></div></sc-for>
+<div style="width:140px;display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center"><svg width="100" height="72" style="display:block"><rect x="4" y="28" width="92" height="16" rx="4" fill="rgba(255,176,32,.12)" stroke="#FFB020" stroke-width="1"></rect><text x="10" y="39" fill="#FFB020" font-size="8" style="font-family:inherit">retry.py</text><text x="74" y="39" fill="#3DFF7A" font-size="8" text-anchor="end" style="font-family:inherit">+42</text><text x="92" y="39" fill="#FF3B5C" font-size="8" text-anchor="end" style="font-family:inherit">−17</text></svg><span style="font-size:10px;font-weight:600;color:#FFB020">file chip</span><span style="font-size:9px;color:#7C8AA8;line-height:1.5">92×16 r4 · fill amber 12% · 1px amber · name 8px · +green / −red</span></div>
+<div style="width:140px;display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center"><svg width="72" height="72" style="display:block;overflow:visible"><rect x="22" y="29" width="28" height="14" rx="7" fill="#2A0A14" stroke="#FF3B5C" stroke-width="1" style="filter:drop-shadow(0 0 6px #FF3B5C)"></rect><text x="36" y="39" text-anchor="middle" fill="#FF3B5C" font-size="9" font-weight="600" style="font-family:inherit">×3</text></svg><span style="font-size:10px;font-weight:600;color:#FF3B5C">loop badge</span><span style="font-size:9px;color:#7C8AA8;line-height:1.5">28×14 pill · fill #2A0A14 · 1px red + glow · sits on loop edge apex</span></div>
+</div></div>
+<div style="display:grid;grid-template-columns:264px 1fr 320px;gap:32px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Agent card · selected</span>
+<sc-for list="{{ oneCard }}" as="c" hint-placeholder-count="1">
+<div style="width:240px;padding:10px 12px;border-radius:10px;border:1px solid {{ c.border }};background:{{ c.bg }};box-shadow:{{ c.shadow }};display:flex;flex-direction:column;gap:6px;box-sizing:border-box">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;font-weight:600">{{ c.name }}</span><span style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:8px;border:1px solid {{ c.mc }};color:{{ c.mc }}">{{ c.model }}</span></div>
+<div style="font-size:10px;color:#7C8AA8;display:flex;gap:6px;align-items:center"><span style="opacity:.7">⎇</span>{{ c.branch }}</div>
+<div style="display:flex;justify-content:space-between;align-items:center;font-size:9px;letter-spacing:.1em;text-transform:uppercase"><span style="display:flex;gap:6px;align-items:center;color:{{ c.sc }}"><span style="width:6px;height:6px;border-radius:3px;background:{{ c.sc }};box-shadow:0 0 6px {{ c.sc }}"></span>{{ c.status }}</span><span style="color:#7C8AA8;letter-spacing:0">{{ c.elapsed }}</span></div>
+<svg width="216" height="4" style="display:block"><rect x="0" y="0" width="216" height="4" rx="2" fill="rgba(124,160,255,.12)"></rect><rect x="0" y="0" width="{{ c.ctxW }}" height="4" rx="2" fill="{{ c.ctxColor }}"></rect></svg>
+<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:9px;color:#7C8AA8;white-space:nowrap">ctx <span style="color:#E6ECFF">{{ c.ctxPct }}%</span> · <span style="color:#E6ECFF">{{ c.tokens }}</span></div><svg width="88" height="18" style="display:block"><path d="{{ c.hb }}" fill="none" stroke="{{ c.sc }}" stroke-width="1" stroke-linejoin="round"></path></svg></div>
+</div>
+</sc-for>
+<div style="font-size:9px;color:#7C8AA8;line-height:1.6">240 wide · pad 10/12 · r10 · gap 6 · ctx bar 216×4: cyan &lt;60%, amber &lt;75%, red ≥75% · heartbeat 88×18 · unselected: border rgba(124,160,255,.14), fill rgba(11,16,32,.6)</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Badges &amp; status pills</span>
+<div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ pills }}" as="p" hint-placeholder-count="6"><span style="display:flex;gap:6px;align-items:center;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:{{ p.hex }};padding:3px 8px;border-radius:8px;border:1px solid rgba(124,160,255,.14);background:rgba(11,16,32,.6)"><span style="width:6px;height:6px;border-radius:3px;background:{{ p.hex }};box-shadow:0 0 6px {{ p.hex }}"></span>{{ p.glyph }} {{ p.name }}</span></sc-for></div>
+<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:6px;color:#E6ECFF;border:1px solid rgba(47,212,255,.5);background:rgba(47,212,255,.1)">60m</span><span style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:6px;color:#7C8AA8;border:1px solid rgba(124,160,255,.14)">6h</span><span style="font-size:9px;color:#7C8AA8">toggle chip · selected: cyan 50% border, 10% fill</span></div>
+<div style="display:flex;gap:8px;align-items:center;font-size:9px;color:#7C8AA8"><span style="width:6px;height:6px;border-radius:3px;background:#3DFF7A;box-shadow:0 0 8px #3DFF7A"></span>status dot 6px + 8px glow · <span style="color:#FF3B5C">✕</span> error glyph · <span style="color:#B36BFF">◐</span> thinking · <span style="color:#2FD4FF">⌕</span> read · <span style="color:#FFB020">✎</span> edit · <span style="color:#3DFF7A">▶</span> run · <span style="color:#4A5568">◦</span> wait</div>
+<span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500;margin-top:8px">Motion spec</span>
+<div style="display:flex;flex-direction:column;gap:3px"><sc-for list="{{ motion }}" as="m" hint-placeholder-count="10"><div style="display:grid;grid-template-columns:120px 1fr;gap:12px;font-size:9px;line-height:1.5"><span style="color:#E6ECFF;font-weight:500">{{ m.name }}</span><span style="color:#7C8AA8">{{ m.spec }}</span></div></sc-for></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Empty state</span>
+<div style="width:320px;height:320px;box-sizing:border-box;position:relative;overflow:hidden;border-radius:16px;background:radial-gradient(130% 90% at 50% 0%,#0B1020 0%,#05070D 72%);border:1px solid rgba(124,160,255,.16);box-shadow:0 0 0 1px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.04)">
+<div style="position:absolute;left:16px;top:12px;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7C8AA8;font-weight:500">Agent HUD</div>
+<svg width="320" height="200" style="position:absolute;left:0;top:24px;overflow:visible"><circle cx="160" cy="100" r="58" fill="none" stroke="rgba(124,160,255,.08)" stroke-width="8"></circle><circle cx="160" cy="100" r="46" fill="none" stroke="rgba(230,236,255,.12)" stroke-width="1" stroke-dasharray="2 6" style="transform-origin:160px 100px;animation:spin 60s linear infinite"></circle></svg>
+<div style="position:absolute;left:0;right:0;top:106px;text-align:center;line-height:1"><div style="font-size:26px;font-weight:600;letter-spacing:-.02em;color:#4A5568">0</div><div style="font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#4A5568;margin-top:4px">tok/min</div></div>
+<div style="position:absolute;left:16px;right:16px;top:212px;text-align:center;font-size:11px;color:#7C8AA8;line-height:1.6">no agents running<br><span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#4A5568">all quiet</span></div>
+<div style="position:absolute;left:16px;right:16px;bottom:8px;height:24px;border-top:1px solid rgba(124,160,255,.08);display:flex;align-items:center;justify-content:center;font-size:9px;color:#4A5568">start a session with <span style="color:#7C8AA8;margin-left:6px">claude</span></div>
+</div>
+<div style="font-size:9px;color:#7C8AA8;line-height:1.6">all strokes dimmed to slate · dashed ring 60s · no glow · number #4A5568</div>
+</div>
+</div>
+</div>
+</div>
+<p style="margin:0;font-size:12px;line-height:1.5;color:#7C8AA8">Try next: "make the dashboard's flow graph show lumen-ui instead" · "add a 2-column compact layout at 480×320" · "tone the glows down 50% for a battery-saver mode"</p>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;blurThoughts&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Dashboard&quot;},&quot;reduceMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Motion&quot;},&quot;showNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Annotations&quot;}}">
+class Component extends DCLogic {
+  renderVals(){
+    const P=this.props;const notes=P.showNotes??true,blur=P.blurThoughts??false,rm=P.reduceMotion??false;
+    const C={think:'#B36BFF',read:'#2FD4FF',edit:'#FFB020',run:'#3DFF7A',err:'#FF3B5C',wait:'#4A5568',sub:'#17D4B0',ink:'#E6ECFF',mute:'#7C8AA8'};
+    const M={'fable-5.1':'#F4F7FF','opus-5':'#9FB4FF','sonnet-5':'#F5D08A','haiku-4.5':'#8FA3B8'};
+    const NAME={think:'thinking',read:'reading',edit:'editing',run:'running',err:'error',wait:'waiting'};
+    const G={think:'◐',read:'⌕',edit:'✎',run:'▶',err:'✕',wait:'◦',sub:'◌',ink:'▸'};
+    const rnd=s=>{const x=Math.sin(s*12.9898+78.233)*43758.5453;return x-Math.floor(x)};
+    const f1=n=>+n.toFixed(1);
+    const pt=(cx,cy,r,a)=>{const t=(a-90)*Math.PI/180;return[f1(cx+r*Math.cos(t)),f1(cy+r*Math.sin(t))]};
+    const arc=(cx,cy,r,a0,a1)=>{const[a,b]=pt(cx,cy,r,a0),[c,d]=pt(cx,cy,r,a1);return`M${a},${b} A${r},${r} 0 ${a1-a0>180?1:0} 1 ${c},${d}`};
+    const spark=(seed,w,h,amp)=>{const n=24;let d='';for(let i=0;i<n;i++){const x=f1(i*w/(n-1)),y=f1(h/2+(rnd(seed+i)-.5)*h*amp*.8+Math.sin(i*1.3+seed)*h*amp*.25);d+=(i?' L':'M')+x+','+y}return d};
+    const fmt=n=>n>=1e6?(n/1e6).toFixed(2)+'M':n>=1e3?(n/1e3).toFixed(1)+'k':''+n;
+    const base=[
+      {name:'orbit-core',branch:'fix/retry-race',model:'fable-5.1',act:'think',ctx:.62,tokens:'1.24M',tok:1240000,elapsed:'42m',tpm:18400,seed:1},
+      {name:'lumen-ui',branch:'feat/theme-toggle',model:'opus-5',act:'edit',ctx:.41,tokens:'612k',tok:612000,elapsed:'1h 08m',tpm:9800,seed:2},
+      {name:'lantern',branch:'perf/cache-warm',model:'sonnet-5',act:'run',ctx:.78,tokens:'2.05M',tok:2050000,elapsed:'2h 31m',tpm:12100,seed:3},
+      {name:'sandpiper',branch:'chore/py312',model:'haiku-4.5',act:'read',ctx:.23,tokens:'88k',tok:88000,elapsed:'12m',tpm:6200,seed:4},
+      {name:'willow',branch:'main',model:'sonnet-5',act:'wait',ctx:.55,tokens:'340k',tok:340000,elapsed:'3h 02m',tpm:0,seed:5}];
+    const mkAgents=k=>base.map(a=>{const o={...a};if(k==='idle'){o.act='wait';o.tpm=0}if(k==='alert'&&a.name==='lantern'){o.act='err';o.tpm=15600}return o});
+    const segs=(ag,cx,cy,r)=>{const n=ag.length,span=360/n,gap=10,max=Math.max(1,...ag.map(a=>a.tpm));return ag.map((a,i)=>({d:arc(cx,cy,r,i*span+gap/2,(i+1)*span-gap/2),color:C[a.act],op:a.act==='wait'?.3:f1(.45+.55*a.tpm/max),anim:a.act==='err'?'pulseRed 1.2s ease-in-out infinite':a.act==='wait'?'none':`breathe ${f1(4-2*a.tpm/20000)}s ease-in-out infinite`,glow:a.act==='wait'?'none':`drop-shadow(0 0 6px ${C[a.act]})`}))};
+    const rows=ag=>ag.map(a=>({name:a.name,color:C[a.act],glyph:G[a.act],label:NAME[a.act],d:spark(a.seed*7,72,14,a.act==='wait'?.08:.7),op:a.act==='wait'?.4:1}));
+    const mkW=(id,kind,title,sub,ticker,tc)=>{const ag=mkAgents(kind);const tpm=ag.reduce((s,a)=>s+a.tpm,0);return{id,title,sub,ticker,tc,segments:segs(ag,160,84,58),rows:rows(ag),tpm:fmt(tpm),today:'3.12M',ringAnim:kind==='idle'?'spin 40s linear infinite':'spin 12s linear infinite',sweepColor:kind==='alert'?C.err:kind==='idle'?C.wait:C.read,statusColor:kind==='alert'?C.err:kind==='idle'?C.wait:C.run,statusText:kind==='alert'?'1 looping':kind==='idle'?'all quiet':'4 active'}};
+    const widgets=[
+      mkW('1a','busy','busy','4 agents active','orbit-core ▸ thinking: "the race is in the retry handler — the backoff timer fires before the mutex releases, so the second attempt reads stale state…"',C.think),
+      mkW('1b','idle','all idle','calm · dim · every stroke slate','all quiet ▸ 5 sessions waiting for input · last activity 14m ago',C.mute),
+      mkW('1c','alert','alert','lantern looping on errors · red pulse','lantern ▸ error ×4: pytest exit 1 — AssertionError in test_cache::test_warm_hit — retrying edit…',C.err)];
+    const busy=mkAgents('busy');
+    const busyTpm=fmt(busy.reduce((s,a)=>s+a.tpm,0));
+    const cards=busy.map((a,i)=>({...a,sel:i===0,status:NAME[a.act],sc:C[a.act],mc:M[a.model],ctxW:Math.round(a.ctx*216),ctxPct:Math.round(a.ctx*100),ctxColor:a.ctx>=.75?C.err:a.ctx>=.6?C.edit:C.read,hb:spark(a.seed*3,88,18,a.act==='wait'?.08:.7),border:i===0?'rgba(179,107,255,.55)':'rgba(124,160,255,.14)',shadow:i===0?'0 0 24px rgba(179,107,255,.18), inset 0 0 0 1px rgba(179,107,255,.25)':'none',bg:i===0?'rgba(179,107,255,.06)':'rgba(11,16,32,.6)'}));
+    // flow graph
+    const ND={p1:[36,160,13,'ink','prompt','fix flaky retry'],t1:[112,160,19,'think','thinking','8.4k tok'],sa1:[200,42,10,'sub','subagent','explore tests'],sa2:[290,42,10,'sub','subagent','2.1k tok'],r1:[200,110,13,'read','Read','retry.py'],s1:[200,214,11,'read','Grep','"backoff"'],t2:[380,160,25,'think','thinking','14.2k tok'],e1:[470,160,17,'edit','Edit','retry.py'],b1:[556,108,13,'run','Bash','pytest'],x1:[636,108,14,'err','failed','exit 1'],b2:[556,232,13,'run','Bash','pytest ✓'],rs:[644,232,11,'ink','result','done']};
+    const nodes=Object.entries(ND).map(([id,[x,y,r,t,label,sub]])=>{const c=C[t];const hex=c.slice(1);const rgb=`${parseInt(hex.slice(0,2),16)},${parseInt(hex.slice(2,4),16)},${parseInt(hex.slice(4,6),16)}`;return{id,x,y,r,rh:r+8,color:c,fill:t==='ink'?'rgba(230,236,255,.9)':t==='err'?`rgba(${rgb},.25)`:`rgba(${rgb},.12)`,dash:t==='sub'?'3 3':'none',glow:t==='ink'?'none':`drop-shadow(0 0 ${t==='err'?10:6}px ${c})`,glyph:t==='ink'?'':G[t],gsz:(r>=19?12:9)+'px',gl:(x-12)+'px',gt:(y-12)+'px',ll:(x-44)+'px',lt:(y+r+4)+'px',st:(y+r+14)+'px',label,sub}});
+    const byId=Object.fromEntries(nodes.map(n=>[n.id,n]));
+    const link=(a,b)=>{const A=byId[a],B=byId[b];const x0=A.x+A.r,x1=B.x-B.r,mx=f1((x0+x1)/2);return`M${x0},${A.y} C${mx},${A.y} ${mx},${B.y} ${x1},${B.y}`};
+    const E=[['p1','t1'],['t1','r1'],['t1','s1'],['t1','sa1'],['sa1','sa2'],['sa2','t2'],['r1','t2'],['s1','t2'],['t2','e1'],['e1','b1'],['b1','x1'],['e1','b2'],['b2','rs']];
+    const edges=E.map(([a,b])=>{const B=byId[b];const sub=B.color===C.sub;return{d:link(a,b),color:B.id==='rs'?C.run:B.color,w:1.25,dash:sub?'3 3':'none',op:.55}});
+    edges.push({d:'M636,122 C636,200 540,206 484,176',color:C.err,w:1.25,dash:'4 3',op:.7});
+    const activePath=link('e1','b1');
+    const cracks=[{d:'M628,100 L634,105 L631,109 L638,116'},{d:'M643,98 L640,104 L645,108'}];
+    const chips=[{x:404,y:96,name:'retry.py',plus:'+42',minus:'−17'},{x:404,y:116,name:'test_retry.py',plus:'+8',minus:'−3'}].map(c=>({...c,l:c.x+'px',t:c.y+'px'}));
+    const chipLinks=[{d:'M470,143 C470,136 460,132 450,132'}];
+    const particles=React.createElement('div',{style:{position:'absolute',inset:0,pointerEvents:'none'}},[0,1,2].map(i=>React.createElement('div',{key:i,style:{position:'absolute',left:0,top:0,width:4,height:4,marginLeft:-2,marginTop:-2,borderRadius:2,background:'#3DFF7A',boxShadow:'0 0 6px #3DFF7A, 0 0 12px #3DFF7A',offsetPath:`path('${activePath}')`,offsetDistance:'0%',animation:`flow 1.6s linear ${i*.53}s infinite`}})));
+    // lanes
+    const laneW=560,LX=96;
+    const lanes=busy.map((a,li)=>{const sg=[];let t=0,i=0;const pal=a.act==='wait'?['wait','wait','read','wait','think']:['think','read','edit','run','think','edit','run','read'];while(t<60){let dur=1.5+rnd(a.seed*31+i)*7;if(t+dur>60)dur=60-t;const act=a.name==='orbit-core'&&t>34&&i%2?'err':a.name==='willow'&&t>30?'wait':pal[i%pal.length];sg.push({x:f1(LX+t/60*laneW),w:Math.max(1,f1(dur/60*laneW-1)),color:C[act]});t+=dur;i++}return{name:a.name,top:(li*28+5)+'px',tf:`translate(0,${li*28})`,segs:sg,ticks:[3,22,41].map((m,k)=>({x:f1(LX+(m+rnd(a.seed+k)*8)/60*laneW)}))}});
+    const axis=[['-60m',0],['-45m',15],['-30m',30],['-15m',45]].map(([t,m])=>({t,x:f1(LX+m/60*laneW),left:f1(LX+m/60*laneW-20)+'px'}));
+    // burn chart
+    const bw=252,bh=72,pts=24;
+    const series=[{k:'input',c:C.read,b:30,a:12},{k:'output',c:C.edit,b:14,a:6},{k:'cache-read',c:C.sub,b:22,a:10},{k:'thinking',c:C.think,b:18,a:9}];
+    const vals=series.map((s,si)=>Array.from({length:pts},(_,i)=>s.b+rnd(si*100+i)*s.a+Math.sin(i/3+si)*s.a*.5+i*s.a*.04));
+    const tot=Array.from({length:pts},(_,i)=>vals.reduce((s,v)=>s+v[i],0));const maxT=Math.max(...tot)*1.06;
+    let lower=new Array(pts).fill(0);
+    const X=i=>f1(i*bw/(pts-1)),Y=v=>f1(bh-v/maxT*bh);
+    const areas=series.map((s,si)=>{const upper=lower.map((l,i)=>l+vals[si][i]);let d='M'+X(0)+','+Y(upper[0]),line=d;for(let i=1;i<pts;i++){d+=' L'+X(i)+','+Y(upper[i]);line+=' L'+X(i)+','+Y(upper[i])}for(let i=pts-1;i>=0;i--)d+=' L'+X(i)+','+Y(lower[i]);d+='Z';lower=upper;return{d,line,color:s.c,k:s.k}});
+    const mix=[['fable-5.1',38],['sonnet-5',31],['opus-5',22],['haiku-4.5',9]];let acc=0;
+    const donut=mix.map(([name,pct])=>{const a0=acc*3.6+1.5,a1=(acc+pct)*3.6-1.5;acc+=pct;return{name,pct,color:M[name],d:arc(32,32,24,a0,a1)}});
+    const gaugeBg=arc(32,32,26,-135,135),gaugeVal=arc(32,32,26,-135,-135+270*.71);
+    const tools=[['Read',412,C.read],['Edit',188,C.edit],['Bash',143,C.run],['Grep',97,C.read],['Write',31,C.edit]].map(([name,v,color])=>({name,v,color,w:Math.round(v/412*52)}));
+    const repos=[...busy].sort((a,b)=>b.tok-a.tok).map(a=>({name:a.name,v:fmt(a.tok),mc:M[a.model],w:Math.max(2,Math.round(a.tok/2050000*24))}));
+    const heat=[];for(let c=0;c<12;c++)for(let r=0;r<7;r++){const v=rnd(c*7+r*3);heat.push({x:c*21,y:r*10,o:f1(v<.15?.06:.1+v*.85)})}
+    const stream=[
+      {t:'14:32:07',ag:'orbit-core',act:'think',text:'the race is in the retry handler — backoff timer fires before the mutex releases'},
+      {t:'14:32:05',ag:'lantern',act:'run',text:'$ pytest tests/test_cache.py -x -q  ·  12 passed in 3.8s'},
+      {t:'14:32:01',ag:'lumen-ui',act:'edit',text:'ThemeToggle.swift  +18 −4  ·  switched palette to semantic tokens'},
+      {t:'14:31:58',ag:'sandpiper',act:'read',text:'pyproject.toml, requirements.txt  ·  checking pinned versions against py3.12'},
+      {t:'14:31:49',ag:'orbit-core',act:'err',text:'Bash exit 1 — AssertionError: expected 3 retries, got 2  ·  iteration 3'},
+      {t:'14:31:40',ag:'willow',act:'wait',text:'waiting for user — "should I also migrate the legacy events table?"'}
+    ].map(s=>({...s,mc:M[base.find(b=>b.name===s.ag).model],ac:C[s.act],glyph:G[s.act],act:NAME[s.act]}));
+    // sheet
+    const tokens=[['bg','#05070D','window base'],['panel','#0B1020','glass @ 55%'],['hairline','rgba(124,160,255,.16)','1px borders'],['ink','#E6ECFF','primary text'],['mute','#7C8AA8','labels'],['thinking','#B36BFF','violet'],['reading','#2FD4FF','cyan · search'],['editing','#FFB020','amber · write'],['running','#3DFF7A','green · bash'],['error','#FF3B5C','red · failed'],['waiting','#4A5568','slate · idle'],['subagent','#17D4B0','teal outline']].map(([name,hex,use])=>({name,hex,use,glow:['bg','panel','hairline','ink','mute','waiting'].includes(name)?'none':`0 0 16px ${hex}55`}));
+    const models=Object.entries(M).map(([name,hex])=>({name,hex}));
+    const sheetSegs=segs(busy,60,60,44),sheetSweep=arc(60,60,34,0,60),sheetSpark=spark(9,120,20,.7);
+    const laneSw=['think','read','edit','run','wait','err'].map(k=>({name:NAME[k],hex:C[k]}));
+    const nodeTypes=[['prompt','ink',13,'filled ink 90% · r13 · no glow · user text under'],['thinking','think',22,'violet 12% fill · r = 10+0.9√(tok/100) · glow 6px'],['tool',  'read',13,'ring 1.5px · glyph 9px · Read/Grep cyan, Edit amber, Bash green'],['error','err',14,'red 25% fill · glow 10px · 2 dark cracks 1.5px'],['subagent','sub',10,'teal dashed "3 3" · r10 · branches fork and merge']].map(([label,t,r,spec])=>{const c=C[t];const hex=c.slice(1);const rgb=`${parseInt(hex.slice(0,2),16)},${parseInt(hex.slice(2,4),16)},${parseInt(hex.slice(4,6),16)}`;return{label,spec,r,rh:r+8,color:c,fill:t==='ink'?'rgba(230,236,255,.9)':t==='err'?`rgba(${rgb},.25)`:`rgba(${rgb},.12)`,dash:t==='sub'?'3 3':'none',glow:t==='ink'?'none':`drop-shadow(0 0 ${t==='err'?10:6}px ${c})`,glyph:t==='ink'?'':G[t],gsz:(r>=19?12:9)+'px',crack:t==='err'?'M28,28 L34,33 L31,37 L38,44':''}});
+    const pills=['think','read','edit','run','err','wait'].map(k=>({name:NAME[k],hex:C[k],glyph:G[k]}));
+    const motion=[
+      ['segment breathe','opacity .55→1 · ease-in-out · period 4s idle → 2s @ 20k tpm · driven by agent tpm'],
+      ['sweep ring','rotate 360° · linear · 12s active / 40s idle · driven by any activity'],
+      ['error pulse','opacity .45→1 + glow 2→12px · 1.2s ease-in-out · while loop count ≥ 2'],
+      ['heartbeat','shift left 1px / 120ms · new sample on each token event · amp .7 active'],
+      ['thought ticker','translateX 0→−50% · 18s linear · restarts on new thought · masked 5% edges'],
+      ['edge particles','3 × 4px dots · offset-path along active edge · 1.6s linear · stagger .53s · while tool call in progress'],
+      ['node enter','scale .6→1, glow 0→8px · 400ms cubic-bezier(.2,.8,.2,1) · on node insert'],
+      ['loop badge','count tick: scale 1→1.25→1 · 300ms ease-out · on iteration'],
+      ['lanes','scroll left 1px / 6.4s (560px = 60min) · playhead opacity .55→1 · 2s ease-in-out'],
+      ['card select','border + glow 220ms ease-out · ctx bar width 300ms ease-out on change'],
+      ['stream cursor','blink 1s steps(1) · new line slides up 12px, 180ms ease-out']
+    ].map(([name,spec])=>({name,spec}));
+    // ---- turn 2: progress, context brain, loop radar
+    const plans={'orbit-core':[3,7,'~18m'],'lumen-ui':[5,6,'~6m'],'lantern':[2,9,'~1h 10m'],'sandpiper':[1,4,'~25m'],'willow':[4,4,'blocked']};
+    const cards2=cards.map(c=>{const[done,total,eta]=plans[c.name];const pct=done/total;const a1=-90+360*pct;return{...c,done,total,eta,pTrack:arc(14,14,11,0,359.9),pArc:pct>=.999?arc(14,14,11,0,359.9):arc(14,14,11,0,360*pct),pColor:c.act==='wait'?C.wait:pct>=.999?C.run:c.mc,pGlow:c.act==='wait'?'none':`drop-shadow(0 0 4px ${c.mc})`,steps:`${done}/${total}`,etaColor:eta==='blocked'?C.err:'#7C8AA8',loopN:c.name==='orbit-core'?3:c.name==='lantern'?1:0}});
+    // context brain: layers left→right
+    const L=[
+      {x:48,label:'prompt',items:[['user prompt',C.ink,3200,1]]},
+      {x:200,label:'context · files',items:[['retry.py',C.read,18400,1],['test_retry.py',C.read,9100,1],['backoff.py',C.read,6200,.5],['config.py',C.read,2100,.3],['CLAUDE.md',C.read,4800,.6],['README.md',C.read,1200,.2]]},
+      {x:352,label:'tools',items:[['Read',C.read,14200,.8],['Grep',C.read,3900,.5],['Edit',C.edit,7600,1],['Bash',C.run,12800,1],['Write',C.edit,900,.2]]},
+      {x:504,label:'reasoning',items:[['hypothesis',C.think,4100,.6],['locate race',C.think,8400,.8],['patch',C.think,6200,1],['verify',C.think,14200,1],['conclude',C.think,1800,.3]]},
+      {x:640,label:'output',items:[['plan.md',C.edit,2400,.7],['diff',C.edit,5100,1],['summary',C.ink,800,.3]]}];
+    const bnodes=[],blayers=[];
+    L.forEach((ly,li)=>{const n=ly.items.length;const gap=Math.min(48,260/(n));const y0=165-(n-1)*gap/2;blayers.push({x:ly.x,left:(ly.x-50)+'px',label:ly.label});ly.items.forEach(([name,color,tok,act],i)=>{const r=f1(Math.max(5,Math.min(17,4+Math.sqrt(tok/60))));const y=f1(y0+i*gap);const hex=color.slice(1),rgb=`${parseInt(hex.slice(0,2),16)},${parseInt(hex.slice(2,4),16)},${parseInt(hex.slice(4,6),16)}`;bnodes.push({id:li+'-'+i,li,x:ly.x,y,r,rh:r+7,color,fill:`rgba(${rgb},${act>=1?.35:.12})`,op:f1(.35+.65*act),glow:act>=1?`drop-shadow(0 0 8px ${color})`:'none',anim:act>=1?`breathe ${f1(1.6+rnd(li*9+i)*1.2)}s ease-in-out infinite`:'none',name,tok:fmt(tok),ll:(ly.x+r+6)+'px',lt:(y-6)+'px',act})})});
+    const bedges=[];
+    for(let li=0;li<L.length-1;li++){const A=bnodes.filter(n=>n.li===li),B=bnodes.filter(n=>n.li===li+1);A.forEach((a,ai)=>B.forEach((b,bi)=>{const w=rnd(li*97+ai*13+bi*7);if(w<.42&&!(a.act>=1&&b.act>=1))return;const hot=a.act>=1&&b.act>=1;const mx=f1((a.x+b.x)/2);bedges.push({d:`M${a.x+a.r},${a.y} C${mx},${a.y} ${mx},${b.y} ${b.x-b.r},${b.y}`,color:hot?b.color:'#7C8AA8',w:hot?1.25:.75,op:hot?.7:f1(.08+w*.14),hot})}))}
+    const hotEdges=bedges.filter(e=>e.hot).slice(0,8);
+    const bparticles=React.createElement('div',{style:{position:'absolute',inset:0,pointerEvents:'none'}},hotEdges.map((e,i)=>React.createElement('div',{key:i,style:{position:'absolute',left:0,top:0,width:3,height:3,marginLeft:-1.5,marginTop:-1.5,borderRadius:2,background:e.color,boxShadow:`0 0 6px ${e.color}`,offsetPath:`path('${e.d}')`,offsetDistance:'0%',animation:`flow ${f1(1.4+rnd(i)*1.2)}s linear ${f1(rnd(i+50)*1.5)}s infinite`}})));
+    const ctxSegs=[['system',8,'#7C8AA8'],['files',61,C.read],['tool results',34,C.run],['thinking',21,C.think]];let cx0=0;
+    const ctxBar=ctxSegs.map(([name,k,color])=>{const w=f1(k/200*688);const o={name,k:k+'k',color,x:cx0,w};cx0+=w;return o});
+    // loop radar
+    const radar=(cx,cy,r0,step,iters,fail)=>{const rings=[];for(let i=0;i<iters;i++){const r=r0+i*step;const t=i/Math.max(1,iters-1);const color=i===iters-1?C.err:t<.34?C.edit:t<.67?'#FF7A45':C.err;const end=i===iters-1?40:359.9;rings.push({d:arc(cx,cy,r,0,end),color,op:f1(.35+.65*t),w:i===iters-1?2:1.25,dash:i===iters-1?'none':'2 3',fx:pt(cx,cy,r,200)[0],fy:pt(cx,cy,r,200)[1],anim:i===iters-1?'pulseRed 1.2s ease-in-out infinite':'none'})}return rings};
+    const radarRings=radar(140,140,26,20,4,true);
+    const radarMini=radar(32,32,8,6,4,true);
+    const radarTrail=[{d:`M${pt(140,140,86,40)[0]},${pt(140,140,86,40)[1]} C${pt(140,140,110,52)[0]},${pt(140,140,110,52)[1]} 240,50 262,30`}];
+    const bigProg=arc(28,28,23,0,360*3/7);
+    const plan=[['✓','Reproduce flaky test locally','2.1k',C.ink],['✓','Read retry.py / backoff.py','18k',C.ink],['✓','Locate race in retry handler','8.4k',C.ink],['◐','Patch mutex ordering','running',C.think],['○','Run pytest -x','—','#7C8AA8'],['○','Add regression test','—','#7C8AA8'],['○','Write summary + open PR','—','#7C8AA8']].map(([mark,text,meta,color])=>({mark,text,meta,color}));
+    return{cards2,bigProg,plan,radarTrailD:radarTrail[0].d,blayers,bnodes,bedges,bparticles,ctxBar,radarRings,radarMini,radarTrail,rootClass:(rm?'rm ':'')+(blur?'blur':''),notes,widgets,sweep:arc(160,84,46,0,60),miniSegs:segs(busy,80,74,50),miniSweep:arc(80,74,40,0,60),busyTpm,cards,oneCard:cards.slice(0,1),nodes,edges,cracks,chips,chipLinks,particles,lanes,axis,areas,donut,gaugeBg,gaugeVal,tools,repos,heat,stream,toggleBorder:blur?'rgba(47,212,255,.6)':'rgba(124,160,255,.3)',toggleBg:blur?'rgba(47,212,255,.2)':'transparent',toggleLeft:blur?'12px':'2px',tokens,models,sheetSegs,sheetSweep,sheetSpark,laneSw,nodeTypes,pills,motion};
+  }
+}
+</script>
+</body>
+</html>

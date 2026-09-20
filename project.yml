@@ -1,0 +1,39 @@
+name: AgentHUD
+options:
+  bundleIdPrefix: com.evgeny
+  deploymentTarget:
+    macOS: "14.0"
+packages:
+  HUDCore:
+    path: Packages/HUDCore
+targets:
+  AgentHUD:
+    type: application
+    platform: macOS
+    sources: [AgentHUD]
+    dependencies:
+      - package: HUDCore
+    info:
+      path: AgentHUD/Info.plist
+      properties:
+        CFBundleDisplayName: Agent HUD
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleIconFile: AppIcon
+        LSApplicationCategoryType: public.app-category.developer-tools
+        NSHumanReadableCopyright: Local, read-only monitor for Claude Code sessions.
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.evgeny.AgentHUD
+        MARKETING_VERSION: "0.4.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+        # Reads ~/.claude, so the app cannot be sandboxed.
+        ENABLE_APP_SANDBOX: NO
+        ENABLE_HARDENED_RUNTIME: NO
+        # A real identity, not ad-hoc: an ad-hoc signature changes with every build, so macOS treats
+        # each rebuild as a new app and re-asks for Documents access (sessions run under ~/Documents,
+        # and DirectoryScanner walks the session's working directory).
+        CODE_SIGN_IDENTITY: "Apple Development"
+        CODE_SIGN_STYLE: Manual
+        DEVELOPMENT_TEAM: TJ4NKH4368
+        PROVISIONING_PROFILE_SPECIFIER: ""
