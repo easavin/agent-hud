@@ -246,13 +246,15 @@ extension GraphicsContext {
         resolve(Text(string).font(Theme.ui(size, weight))).measure(in: CGSize(width: 4000, height: 100)).width
     }
 
-    /// `string` cut to `width`, from the front (`…/Light`) or through the middle (`Dashbo…w.swift`),
-    /// whichever keeps the part that identifies it.
-    func fit(_ string: String, to width: CGFloat, size: CGFloat, weight: Font.Weight = .regular, keepTail: Bool = false) -> String {
+    /// `string` cut to `width`: through the middle by default (`Dashbo…w.swift`, which keeps the
+    /// extension), from the front with `keepTail` (`…s/Light`), or at the end with `cutEnd` (`Resour…`).
+    func fit(_ string: String, to width: CGFloat, size: CGFloat, weight: Font.Weight = .regular,
+             keepTail: Bool = false, cutEnd: Bool = false) -> String {
         guard self.width(of: string, size: size, weight: weight) > width else { return string }
-        let tail = keepTail ? string.count : min(7, string.count / 2)
+        let tail = keepTail ? string.count : cutEnd ? 0 : min(7, string.count / 2)
         for kept in stride(from: string.count - 1, through: 1, by: -1) {
-            let cut = keepTail ? "…" + string.suffix(kept) : string.prefix(max(1, kept - tail)) + "…" + string.suffix(min(tail, kept - 1))
+            let cut = keepTail ? "…\(string.suffix(kept))"
+                : "\(string.prefix(max(1, kept - tail)))…\(string.suffix(min(tail, kept - 1)))"
             if self.width(of: cut, size: size, weight: weight) <= width { return cut }
         }
         return "…"

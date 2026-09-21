@@ -31,14 +31,16 @@ struct FileTreeLayout {
     /// Files left out because the canvas ran out of rows.
     private(set) var hidden = 0
     private(set) var rowHeight: CGFloat = FileTreeLayout.minRowHeight
-    private(set) var columnWidth: CGFloat = 0
+    private(set) var columnWidths: [CGFloat] = []
     /// x of the file dots.
     private(set) var leafX: CGFloat = 0
     /// Trailing edge of the diff bars, the right end of every file row.
     private(set) var trailingX: CGFloat = 0
+    /// Width of the diff bar at the end of a file row; 0 when the card is too narrow for one.
+    private(set) var barWidth: CGFloat = 56
     /// Largest `linesAdded + linesRemoved` on the canvas; the diff bars are scaled against it.
     private(set) var maxChurn = 1
-    /// The file touched last, which the view rings.
+    /// The file touched last, which the view sets in semibold.
     private(set) var newestId: String?
 
     static let minRowHeight: CGFloat = 19
@@ -46,13 +48,20 @@ struct FileTreeLayout {
     static let firstX: CGFloat = 14
     static let inset: CGFloat = 12
     static let pillHeight: CGFloat = 17
-    /// Folders deeper than this are folded into one name, so the tree stays three columns wide.
-    static let maxFolderDepth = 2
+    /// The least room a column keeps clear after its pill for links to fan out in.
+    static let linkGap: CGFloat = 30
+    /// Room for a "./" pill and its links.
+    static let rootMinWidth: CGFloat = 76
+    /// Below this width the card drops to one folder column and leaves the diff bars out.
+    static let compactWidth: CGFloat = 560
 
     /// A folder pill may grow this wide before its name is cut; the rest of the column is for links.
-    var pillMaxWidth: CGFloat { columnWidth - 34 }
+    func pillMaxWidth(_ depth: Int) -> CGFloat {
+        (columnWidths.indices.contains(depth) ? columnWidths[depth] : 84) - Self.linkGap
+    }
 
-    func columnX(_ depth: Int) -> CGFloat { Self.firstX + CGFloat(depth) * columnWidth }
+    /// Leading edge of a folder column; one past the last folder column is where the links to files bend.
+    func columnX(_ depth: Int) -> CGFloat { Self.firstX + columnWidths.prefix(depth).reduce(0, +) }
 
     // MARK: Build
 
@@ -77,6 +86,10 @@ struct FileTreeLayout {
 
     init(agent: AgentSnapshot, size: CGSize) {
         let usable = size.height - Self.inset * 2
+        let compact = size.width < Self.compactWidth
+        // Folders deeper than this are folded into one name, so the tree stays three columns wide.
+        let maxFolderDepth = compact ? 1 : 2
+        barWidth = compact ? 0 : 56
         let maxRows = max(3, Int(usable / Self.minRowHeight))
         let shownCount = min(agent.files.count, maxRows)
         hidden = agent.files.count - shownCount
@@ -93,8 +106,8 @@ struct FileTreeLayout {
             guard let name = parts.popLast() else { continue }
             if inside {
                 // Everything past the second folder is folded into one name: "src" / "retry/deep".
-                if parts.count > Self.maxFolderDepth {
-                    parts = Array(parts.prefix(Self.maxFolderDepth - 1)) + [parts.dropFirst(Self.maxFolderDepth - 1).joined(separator: "/")]
+                if parts.count > maxFolderDepth {
+                    parts = Array(parts.prefix(maxFolderDepth - 1)) + [parts.dropFirst(maxFolderDepth - 1).joined(separator: "/")]
                 }
             } else {
                 // A file outside the session's folder keeps only its immediate parent: reproducing an
@@ -118,12 +131,35 @@ struct FileTreeLayout {
         maxChurn = max(1, shown.map { $0.linesAdded + $0.linesRemoved }.max() ?? 1)
         newestId = shown.max { $0.lastTouched < $1.lastTouched }?.path
 
-        // Columns: one per folder level, then the files. The file column keeps about two fifths of
-        // the width for names and diff bars; folder columns share the rest, within reason.
-        let folderColumns = CGFloat(Self.folderDepth(root) + 1)
-        let leafRoom = min(480, max(230, size.width * 0.4))
-        columnWidth = min(240, max(96, (size.width - Self.firstX - leafRoom) / folderColumns))
-        leafX = Self.firstX + folderColumns * columnWidth + 10
+        // Columns: one per folder level, each as wide as its longest name asks for, then the files.
+        // The file column is sized for its longest name plus the counts and the diff bar; when the
+        // card is too narrow for everyone the folder columns give way and their names are cut.
+        var chars: [Int] = []
+        Self.nameLengths(root, depth: 0, into: &chars)
+        let longestFile = shown.map { ($0.path as NSString).lastPathComponent.count }.max() ?? 12
+        let leafRoom = min(480, max(180, 16 + CGFloat(min(longestFile, 20)) * 6.4 + 66 + barWidth + 8))
+        let available = max(72 * CGFloat(chars.count), size.width - Self.firstX - 10 - leafRoom)
+        var widths = chars.map { min(210, max(84, CGFloat($0) * 6.6 + 38 + Self.linkGap)) }
+        let wanted = widths.reduce(0, +)
+        if wanted > available {
+            // The session folder gives way first: its name is already in the card's title, and the
+            // view falls back to "./". Then the widest of the other columns are levelled down to a
+            // common cap, so one long folder name does not cost a short one its letters.
+            widths[0] = max(Self.rootMinWidth, widths[0] - (wanted - available))
+            var low: CGFloat = 40, high: CGFloat = 210
+            for _ in 0..<16 {
+                let cap = (low + high) / 2
+                let total = widths[0] + widths.dropFirst().reduce(0) { $0 + min($1, cap) }
+                if total > available { high = cap } else { low = cap }
+            }
+            for index in widths.indices.dropFirst() { widths[index] = min(widths[index], low) }
+        } else {
+            // Spare width loosens the links a little; the rest goes to the file rows.
+            let slack = min(70, (available - wanted) / CGFloat(widths.count))
+            widths = widths.map { $0 + slack }
+        }
+        columnWidths = widths
+        leafX = Self.firstX + widths.reduce(0, +) + 10
         trailingX = min(size.width - 14, leafX + 520)
 
         // Few files spread out and sit in the middle of the card rather than hugging its top edge.
@@ -175,9 +211,12 @@ struct FileTreeLayout {
         }
     }
 
-    /// How many folder levels hang below this one.
-    private static func folderDepth(_ branch: Branch) -> Int {
-        branch.children.filter { $0.file == nil }.map { folderDepth($0) + 1 }.max() ?? 0
+    /// Longest folder name at each depth, in characters.
+    private static func nameLengths(_ branch: Branch, depth: Int, into chars: inout [Int]) {
+        guard branch.file == nil else { return }
+        if chars.count <= depth { chars.append(0) }
+        chars[depth] = max(chars[depth], branch.name.count + 1)
+        for child in branch.children { nameLengths(child, depth: depth + 1, into: &chars) }
     }
 
     /// Depth-first: every file takes the next row in the file column, every folder sits at the

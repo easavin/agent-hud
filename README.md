@@ -101,8 +101,9 @@ nothing scales, the layout reflows.
   columns and says so.
 - **Brain** — the context window by layer: what is filling it and how close to full.
 - **Loops** — a radar of repeated failures, with the iteration that keeps coming back.
-- **Files** — the session's working directory as a schematic rather than a list. Folders branch,
-  files are leaves sized by edit count, and a dashed ring marks a change made by a shell command
+- **Files** — the session's working directory as a graph rather than a list. Folders branch left to
+  right on curved links and every file lines up in one column: its dot is sized by edit count, its
+  link and diff bar by lines changed, and a dashed ring marks a change made by a shell command
   rather than an Edit call.
 
 ![The Files tab](docs/images/files.png)
@@ -146,7 +147,7 @@ use **JetBrains Mono**, falling back to SF Mono. Neither font is bundled.
   - `FlowLayout.swift` turns a turn's steps into positioned nodes and edges (pure geometry, no
     SwiftUI, independently testable); `FlowGraphView.swift` draws them.
   - `HeroTabs.swift` — brain graph and loop radar. `FileTreeLayout.swift` + `FilesView.swift` — the
-    working directory schematic.
+    working directory graph.
   - `AgentCard.swift`, `LanesPanel.swift`, `StatsRail.swift`, `WidgetView.swift`, `DockTileView.swift`.
 - **`design_handoff_agent_hud_light/`** — the design handoff this UI is built from (frame `3b`).
   `design_handoff_agent_hud_terminal/` (`3a`) and `design_handoff_agent_hud/` (the original neon

@@ -15,6 +15,7 @@ struct DashboardView: View {
     static let designSize = CGSize(width: 1280, height: 800)
 
     let monitor: AgentMonitor
+    @Environment(\.staticRendering) private var staticRendering
     @State private var heroTab: HeroTab
     @State private var burnRange: BurnRange = .day
     @State private var laneRange: LaneRange = .hour
@@ -96,7 +97,8 @@ struct DashboardView: View {
         }
         .padding(.trailing, 16)
         .frame(height: 52)
-        .background(WindowDragArea())
+        // ImageRenderer paints an AppKit view as a yellow "unsupported" slab, so snapshots go without.
+        .background { if !staticRendering { WindowDragArea() } }
         .background(Theme.header)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: 1) }
     }
