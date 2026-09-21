@@ -106,7 +106,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
         window.title = "Agent HUD"
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
-        window.isMovableByWindowBackground = true
+        // Not movable by background: AppKit would claim a mouse-down on any transparent area to move
+        // the window before SwiftUI sees it, and the pane splitters are transparent on purpose. The
+        // header is an explicit drag area instead (`WindowDragArea`).
+        window.isMovableByWindowBackground = false
         window.backgroundColor = NSColor(red: 244 / 255, green: 243 / 255, blue: 238 / 255, alpha: 1)
         window.appearance = NSAppearance(named: .aqua)
         window.contentMinSize = CGSize(width: 1020, height: 620)

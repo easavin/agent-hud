@@ -155,7 +155,11 @@ use **JetBrains Mono**, falling back to SF Mono. Neither font is bundled.
 
 Anything with a shape of its own is a `Canvas`: the flow graph, brain graph, loop radar, lanes,
 stacked-area burn chart, donut, heatmap. Cards, controls and text stay ordinary SwiftUI so they
-hit-test and truncate properly. Dragging updates `@State` and writes to `UserDefaults` once, on release: `@AppStorage` pushes every frame of a
+hit-test and truncate properly. The dashboard window is **not** movable by its background: AppKit claims a mouse-down on any transparent area to
+move the window before SwiftUI sees it, and the splitters are transparent, so every drag moved the window instead
+of resizing. The header is the drag area instead (`WindowDragArea`).
+
+Dragging updates `@State` and writes to `UserDefaults` once, on release: `@AppStorage` pushes every frame of a
 drag through the defaults system and the whole dashboard re-renders with it. The stats rail picks its one- or
 two-column layout from the width it is handed rather than with `ViewThatFits`, which re-measures mid-drag and
 flickers, and the splitter holds its cursor for the length of a drag instead of swapping it as the handle slides

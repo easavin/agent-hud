@@ -313,3 +313,17 @@ struct Splitter: View {
         }
     }
 }
+
+// MARK: - Window dragging
+
+/// Makes the view it sits behind move the window, for a window that is not movable by its background.
+/// Buttons and other controls in front of it still get their clicks first.
+struct WindowDragArea: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView { DragView() }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private final class DragView: NSView {
+        override var mouseDownCanMoveWindow: Bool { true }
+        override func mouseDown(with event: NSEvent) { window?.performDrag(with: event) }
+    }
+}

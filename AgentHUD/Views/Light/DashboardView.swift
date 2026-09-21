@@ -96,6 +96,7 @@ struct DashboardView: View {
         }
         .padding(.trailing, 16)
         .frame(height: 52)
+        .background(WindowDragArea())
         .background(Theme.header)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: 1) }
     }
