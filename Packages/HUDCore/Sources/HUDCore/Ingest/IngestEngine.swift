@@ -78,7 +78,9 @@ public actor IngestEngine {
             var snapshot = Self.snapshot(id: id, session: &session, now: now)
             snapshot.subagents = subagents ?? session.subagents.poll()
             tracked[id] = session
-            if isLive { live.append(snapshot) } else { ended.append(snapshot) }
+            if isLive { live.append(snapshot) }
+            // A transcript that never got an answer (opened and quit) is noise in the history.
+            else if snapshot.usage.total > 0 { ended.append(snapshot) }
         }
         live.sort { ($0.startedAt ?? .distantPast) < ($1.startedAt ?? .distantPast) }
         ended.sort { ($0.endedAt ?? .distantPast) > ($1.endedAt ?? .distantPast) }

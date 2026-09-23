@@ -35,6 +35,12 @@ struct DashboardView: View {
 
     private func persist(_ key: String, _ value: Double) { UserDefaults.standard.set(value, forKey: key) }
     @FocusState private var focused: Bool
+    /// First row shown in the session rail, and how many rows fit (kept for the key and wheel handlers).
+    @State private var railStart = 0
+    @State private var railVisible = 1
+    @State private var railHovered = false
+    @State private var wheelMonitor: Any?
+    @State private var wheelAccumulator: CGFloat = 0
 
     init(monitor: AgentMonitor, initialTab: HeroTab = .flow) {
         self.monitor = monitor
@@ -54,7 +60,11 @@ struct DashboardView: View {
         .focusable()
         .focusEffectDisabled()
         .focused($focused)
-        .onAppear { focused = true }
+        .onAppear { focused = true; installWheelMonitor() }
+        .onDisappear {
+            if let wheelMonitor { NSEvent.removeMonitor(wheelMonitor) }
+            wheelMonitor = nil
+        }
         .onKeyPress { press in handle(press) }
     }
 
@@ -137,38 +147,12 @@ struct DashboardView: View {
         let rows = rows
         // Each column keeps at least enough width to stay legible; the centre takes the remainder.
         let inner = size.width - 32 - Splitter.thickness * 2
-        let rail = min(max(railWidth, 190), max(190, inner - 360 - 250))
-        let stats = min(max(statsWidth, 250), max(250, inner - rail - 360))
+        let railSide = min(max(railWidth, 190), max(190, inner - 360 - 250))
+        let stats = min(max(statsWidth, 250), max(250, inner - railSide - 360))
         let bodyHeight = size.height - 16
         let hero = min(max(heroHeight, 200), max(200, bodyHeight - Splitter.thickness - 150))
-        // A window of cards rather than a scroll view: ImageRenderer cannot draw a ScrollView, so
-        // snapshots would come back blank. ↑/↓ moves the window instead.
-        let cardPitch = AgentCard.height + 8
-        let visible = max(1, Int((bodyHeight + 8) / cardPitch))
-        let selectedIndex = rows.firstIndex { $0.id == monitor.selected?.id } ?? 0
-        let start = max(0, min(max(0, rows.count - visible), selectedIndex - visible + 1))
         return HStack(alignment: .top, spacing: 0) {
-            VStack(spacing: 8) {
-                ForEach(Array(rows.dropFirst(start).prefix(visible))) { agent in
-                    AgentCard(agent: agent, selected: agent.id == monitor.selected?.id)
-                        .contentShape(Rectangle())
-                        .onTapGesture { monitor.selectedId = agent.id }
-                }
-                if rows.isEmpty {
-                    Card {
-                        Text("No sessions — start one with `claude`")
-                            .font(Theme.ui(12)).foregroundStyle(Theme.mute)
-                    }
-                    .frame(height: AgentCard.height)
-                }
-                if rows.count > visible {
-                    Text("+\(rows.count - visible) more · ↑↓")
-                        .font(Theme.ui(11)).foregroundStyle(Theme.mute)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                Spacer(minLength: 0)
-            }
-            .frame(width: rail)
+            rail(rows, height: bodyHeight).frame(width: railSide)
 
             Splitter(axis: .vertical, value: $railWidth, range: 190...max(190, inner - 360 - 250),
                      onCommit: { persist("railWidth", railWidth) })
@@ -183,7 +167,7 @@ struct DashboardView: View {
             .frame(maxWidth: .infinity)
 
             Splitter(axis: .vertical, value: $statsWidth,
-                     range: 250...max(250, inner - rail - 360), sign: -1,
+                     range: 250...max(250, inner - railSide - 360), sign: -1,
                      onCommit: { persist("statsWidth", statsWidth) })
 
             StatsRail(monitor: monitor, burnRange: $burnRange, width: stats)
@@ -193,6 +177,84 @@ struct DashboardView: View {
         .padding(.horizontal, 16).padding(.vertical, 8)
         .frame(height: size.height, alignment: .top)
         .clipped()
+    }
+
+    // MARK: Session rail
+
+    /// How many cards fit in the rail; the footer line lives in the gap under the last one.
+    private static func railCapacity(_ height: CGFloat) -> Int {
+        max(1, Int((height + 8) / (AgentCard.height + 8)))
+    }
+
+    /// A window of cards rather than a scroll view: ImageRenderer cannot draw a ScrollView, so
+    /// snapshots would come back blank. The footer, the wheel and ↑/↓ move the window instead.
+    private func rail(_ rows: [AgentSnapshot], height: CGFloat) -> some View {
+        let visible = Self.railCapacity(height)
+        let start = max(0, min(railStart, rows.count - visible))
+        let below = max(0, rows.count - start - visible)
+        return VStack(spacing: 8) {
+            ForEach(Array(rows.dropFirst(start).prefix(visible))) { agent in
+                AgentCard(agent: agent, selected: agent.id == monitor.selected?.id)
+                    .contentShape(Rectangle())
+                    .onTapGesture { monitor.selectedId = agent.id }
+            }
+            if rows.isEmpty {
+                Card {
+                    Text("No sessions — start one with `claude`")
+                        .font(Theme.ui(12)).foregroundStyle(Theme.mute)
+                }
+                .frame(height: AgentCard.height)
+            }
+            if rows.count > visible {
+                HStack(spacing: 4) {
+                    Text([start > 0 ? "\(start) above" : nil, below > 0 ? "+\(below) more" : nil]
+                        .compactMap { $0 }.joined(separator: " · "))
+                        .font(Theme.ui(11)).foregroundStyle(Theme.mute)
+                    Spacer(minLength: 4)
+                    RailPageButton(symbol: "chevron.up", enabled: start > 0) { scrollRail(by: -visible, rows.count) }
+                    RailPageButton(symbol: "chevron.down", enabled: below > 0) { scrollRail(by: visible, rows.count) }
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .contentShape(Rectangle())
+        .onContinuousHover { phase in
+            if case .active = phase { railHovered = true } else { railHovered = false }
+        }
+        .onChange(of: height, initial: true) { railVisible = visible }
+        .onChange(of: monitor.agents.map(\.id)) { old, new in
+            // A session that just started should be on screen, not hidden above or below the window.
+            guard let fresh = new.last(where: { !old.contains($0) }),
+                  let index = self.rows.firstIndex(where: { $0.id == fresh }) else { return }
+            revealInRail(index)
+        }
+    }
+
+    private func scrollRail(by delta: Int, _ count: Int) {
+        railStart = max(0, min(max(0, count - railVisible), railStart + delta))
+    }
+
+    /// Moves the window the least needed to show `index`.
+    private func revealInRail(_ index: Int) {
+        if index < railStart { railStart = index }
+        else if index >= railStart + railVisible { railStart = index - railVisible + 1 }
+    }
+
+    /// The rail has no scroll view to receive the wheel, so the window listens for it while the pointer is over it.
+    private func installWheelMonitor() {
+        guard wheelMonitor == nil, !staticRendering else { return }
+        wheelMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
+            guard railHovered else { return event }
+            wheelAccumulator += event.scrollingDeltaY
+            // One card per notch on a mouse; trackpads send many small deltas, so step once per card height.
+            let step = event.hasPreciseScrollingDeltas ? AgentCard.height / 2 : 1
+            while abs(wheelAccumulator) >= step {
+                scrollRail(by: wheelAccumulator > 0 ? -1 : 1, rows.count)
+                wheelAccumulator -= wheelAccumulator > 0 ? step : -step
+            }
+            if event.phase == .ended || event.momentumPhase == .ended { wheelAccumulator = 0 }
+            return nil
+        }
     }
 
     private var heroCard: some View {
@@ -251,7 +313,28 @@ struct DashboardView: View {
     private func move(_ delta: Int) {
         guard !rows.isEmpty else { return }
         let current = rows.firstIndex { $0.id == monitor.selected?.id } ?? 0
-        monitor.selectedId = rows[max(0, min(rows.count - 1, current + delta))].id
+        let next = max(0, min(rows.count - 1, current + delta))
+        monitor.selectedId = rows[next].id
+        revealInRail(next)
+    }
+}
+
+/// The rail footer's page up / page down chevrons.
+private struct RailPageButton: View {
+    let symbol: String
+    let enabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(enabled ? Theme.ink : Theme.mute.opacity(0.5))
+                .frame(width: 22, height: 18)
+                .background(RoundedRectangle(cornerRadius: 4).strokeBorder(Theme.border, lineWidth: 1))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
     }
 }
 
