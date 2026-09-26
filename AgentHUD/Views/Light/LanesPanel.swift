@@ -14,6 +14,8 @@ struct LanesPanel: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     static let trackX: CGFloat = 96, rowHeight: CGFloat = 28
+    /// Lanes shrink toward this before any are left out.
+    static let minRowHeight: CGFloat = 18
     /// Room kept to the right of the track for the playhead and its label.
     static let tailWidth: CGFloat = 32
 
@@ -42,9 +44,19 @@ struct LanesPanel: View {
         func x(_ date: Date) -> CGFloat {
             Self.trackX + trackWidth * max(0, min(1, date.timeIntervalSince(start) / window))
         }
-        // As many lanes as the pane has room for, once the axis has its 24px.
-        let rows = Array(agents.prefix(max(1, Int((size.height - 26) / Self.rowHeight))))
-        let gridBottom = max(20, CGFloat(rows.count) * Self.rowHeight + 6)
+        // Live sessions always get a lane; a finished one only if it did something in this range.
+        let plotted = agents.filter { agent in
+            guard let ended = agent.endedAt else { return true }
+            return agent.promptTicks.contains { $0 > start }
+                || agent.lanes.contains { $0.kind != .idle && ($0.end ?? ended) > start }
+        }
+        // Lanes shrink to fit the pane (less the axis' 26px) before any are left out.
+        let room = size.height - 26 - 6
+        let rowHeight = max(Self.minRowHeight, min(Self.rowHeight, room / CGFloat(max(1, plotted.count))))
+        let rows = Array(plotted.prefix(max(1, Int(room / rowHeight))))
+        let hidden = plotted.count - rows.count
+        let barHeight = max(8, rowHeight - 12)
+        let gridBottom = max(20, CGFloat(rows.count) * rowHeight + 6)
 
         // Dashed gridlines at each quarter of the window, labelled below the lanes.
         for quarter in 1..<4 {
@@ -61,17 +73,18 @@ struct LanesPanel: View {
         }
 
         for (row, agent) in rows.enumerated() {
-            let top = CGFloat(row) * Self.rowHeight + 6
-            context.label(String(agent.repo.prefix(13)), at: CGPoint(x: 0, y: top + 8), size: 12, weight: .medium,
-                          color: Theme.ink, anchor: .leading)
-            context.fill(Path(roundedRect: CGRect(x: Self.trackX, y: top, width: trackWidth, height: 16),
+            let top = CGFloat(row) * rowHeight + 6
+            let name = context.fit(agent.repo, to: Self.trackX - 10, size: rowHeight < 24 ? 11 : 12, weight: .medium, cutEnd: true)
+            context.label(name, at: CGPoint(x: 0, y: top + barHeight / 2), size: rowHeight < 24 ? 11 : 12, weight: .medium,
+                          color: agent.isEnded ? Theme.mute : Theme.ink, anchor: .leading)
+            context.fill(Path(roundedRect: CGRect(x: Self.trackX, y: top, width: trackWidth, height: barHeight),
                               cornerRadius: Theme.Radius.laneTrack), with: .color(Theme.track))
             for segment in agent.lanes {
                 // A finished session's last segment stops when the session did, not at the playhead.
                 let end = segment.end ?? agent.endedAt ?? now
                 guard end > start, segment.kind != .idle else { continue }
                 let from = x(max(segment.start, start)), to = x(end)
-                let rect = CGRect(x: from, y: top, width: max(1, to - from), height: 16)
+                let rect = CGRect(x: from, y: top, width: max(1, to - from), height: barHeight)
                 context.fill(Path(roundedRect: rect, cornerRadius: 1),
                              with: .color(Theme.color(for: segment.kind).opacity(segment.kind == .waiting ? 0.45 : 1)))
             }
@@ -85,6 +98,9 @@ struct LanesPanel: View {
         context.stroke(playhead, with: .color(Theme.ink), lineWidth: 2)
         context.label("now", at: CGPoint(x: playheadX, y: gridBottom + 8), size: 10, weight: .semibold, color: Theme.ink)
 
+        if hidden > 0 {
+            context.label("+\(hidden) more", at: CGPoint(x: 0, y: gridBottom + 8), size: 10, color: Theme.mute, anchor: .leading)
+        }
         if rows.isEmpty {
             context.label("No sessions to plot", at: CGPoint(x: size.width / 2, y: 60), size: 13, color: Theme.mute)
         }
