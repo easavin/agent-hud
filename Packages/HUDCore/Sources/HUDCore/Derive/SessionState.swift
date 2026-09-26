@@ -108,7 +108,9 @@ public struct SessionState: Sendable {
         }
 
         if event.stopReason == "end_turn" {
-            set(.waiting, at: date)
+            // Waiting on the user's next prompt is idle time as far as the lanes go; drawn, it would
+            // fill every hour between turns and drown out the work.
+            set(.waiting, lane: .idle, at: date)
             touchBrain(.output, name: "summary", tokens: steps.last?.tokens ?? 0, activity: .responding, at: date)
         }
     }
@@ -300,12 +302,12 @@ public struct SessionState: Sendable {
 
     // MARK: Activity + ticker
 
-    private mutating func set(_ kind: ActivityKind, at date: Date) {
+    private mutating func set(_ kind: ActivityKind, lane: ActivityKind? = nil, at date: Date) {
         guard kind != activity else { return }
         activity = kind
         activitySince = date
         if let last = lanes.indices.last, lanes[last].end == nil { lanes[last].end = date }
-        lanes.append(LaneSegment(start: date, end: nil, kind: kind))
+        lanes.append(LaneSegment(start: date, end: nil, kind: lane ?? kind))
         if lanes.count > 4000 { lanes.removeFirst(lanes.count - 4000) }
     }
 

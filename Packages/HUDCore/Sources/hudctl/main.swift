@@ -33,5 +33,11 @@ for agent in agents {
     let tools = agent.toolCounts.sorted { $0.value > $1.value }.prefix(5).map { "\($0.key)×\($0.value)" }
     print("  tools: \(tools.joined(separator: " "))  steps=\(agent.steps.count) lanes=\(agent.lanes.count) plan=\(agent.planDone)/\(agent.plan.count)")
     for loop in agent.loops { print("  loop \(loop.label) ×\(loop.count) sameError=\(loop.sameErrorCount) resolved=\(loop.resolved)") }
+    let hour = Date().addingTimeInterval(-3600)
+    let recent = agent.lanes.filter { ($0.end ?? .distantFuture) > hour && $0.kind != .idle }
+    if let first = recent.first, let last = recent.last {
+        let span = (last.end ?? Date()).timeIntervalSince(max(first.start, hour))
+        print("  lanes last hour: \(recent.count) segments, \(Int(first.start.timeIntervalSinceNow / 60))m → \(Int(((last.end ?? Date()).timeIntervalSinceNow) / 60))m, \(Int(span))s")
+    }
     for item in agent.ticker.suffix(3) { print("    [\(item.kind.rawValue)] \(item.text.prefix(100))") }
 }

@@ -55,7 +55,7 @@ public actor IngestEngine {
         loadNextFromBacklog(excluding: liveIds, now: now)
         tracked = tracked.filter { $0.value.endedAt.map { now.timeIntervalSince($0) < Self.historyWindow } ?? true }
 
-        var live: [AgentSnapshot] = [], ended: [AgentSnapshot] = []
+        var live: [(snapshot: AgentSnapshot, busy: Bool, recency: Date)] = [], ended: [AgentSnapshot] = []
         for id in tracked.keys {
             guard var session = tracked[id] else { continue }
             let isLive = session.endedAt == nil
@@ -78,13 +78,19 @@ public actor IngestEngine {
             var snapshot = Self.snapshot(id: id, session: &session, now: now)
             snapshot.subagents = subagents ?? session.subagents.poll()
             tracked[id] = session
-            if isLive { live.append(snapshot) }
+            if isLive {
+                // A working agent ranks by the prompt that started its turn, so it does not jump
+                // around mid-turn; an idle one by when it last did anything.
+                let recency = busy ? session.state.promptTicks.last ?? session.state.lastEventAt : session.state.lastEventAt
+                live.append((snapshot, busy, recency ?? snapshot.startedAt ?? .distantPast))
+            }
             // A transcript that never got an answer (opened and quit) is noise in the history.
             else if snapshot.usage.total > 0 { ended.append(snapshot) }
         }
-        live.sort { ($0.startedAt ?? .distantPast) < ($1.startedAt ?? .distantPast) }
+        // Working agents on top, then the rest by recency; history stays below, newest first.
+        live.sort { a, b in a.busy != b.busy ? a.busy : a.recency > b.recency }
         ended.sort { ($0.endedAt ?? .distantPast) > ($1.endedAt ?? .distantPast) }
-        return live + ended.prefix(Self.historyLimit)
+        return live.map(\.snapshot) + ended.prefix(Self.historyLimit)
     }
 
     /// The project slug is a lossy encoding of the cwd, so locate the file by session id instead.
@@ -147,10 +153,9 @@ public actor IngestEngine {
             tokensPerMinute: tokensPerMinute, heartbeat: heartbeat,
             toolCounts: state.toolCounts, errorCount: state.errorCount,
             startedAt: entry?.startedAt ?? state.firstEventAt, ticker: state.ticker,
-            // Sessions that have ever held more than 200k tokens must be on a 1M window.
-            contextMax: state.peakContextTokens > 200_000 ? 1_000_000 : 200_000,
+            contextMax: contextWindow(model: state.model, peak: state.peakContextTokens),
             turnIndex: state.turnIndex, steps: state.steps,
-            lanes: state.lanes(since: now.addingTimeInterval(-SessionState.laneWindow)),
+            lanes: lanes(state, busy: busy, now: now),
             promptTicks: state.promptTicks.filter { $0 > now.addingTimeInterval(-SessionState.laneWindow) },
             plan: state.plan, loops: state.loops, brain: state.brain(),
             contextSplit: state.contextSplit, etaMinutes: eta
@@ -158,6 +163,27 @@ public actor IngestEngine {
         snapshot.files = mergeFiles(transcript: state.fileChanges, disk: session.diskChanges)
         snapshot.endedAt = session.endedAt
         return snapshot
+    }
+
+    /// Claude Code runs the Claude 5 family on a 1M window, and older models when opted in with `[1m]`.
+    static func contextWindow(model: String?, peak: Int) -> Int {
+        let name = model ?? ""
+        // Sessions that have ever held more than 200k tokens must be on a 1M window.
+        if peak > 200_000 || name.hasSuffix("[1m]") { return 1_000_000 }
+        // "claude-opus-5-5", "claude-sonnet-5", "claude-fable-5-1": the family's major version follows the name.
+        let parts = name.split(separator: "-")
+        if parts.count >= 3, parts[0] == "claude", let major = Int(parts[2]), major >= 5 { return 1_000_000 }
+        return 200_000
+    }
+
+    /// The transcript cannot tell an interrupted turn from a running one; the registry can. Once it
+    /// says the agent is not working, its last segment stops at the last thing it wrote.
+    static func lanes(_ state: SessionState, busy: Bool, now: Date) -> [LaneSegment] {
+        var lanes = state.lanes(since: now.addingTimeInterval(-SessionState.laneWindow))
+        if !busy, let last = lanes.indices.last, lanes[last].end == nil, lanes[last].kind.isActive {
+            lanes[last].end = state.lastEventAt ?? lanes[last].start
+        }
+        return lanes
     }
 
     /// The transcript knows intent (read / edit / write, line counts); the disk knows what really changed.

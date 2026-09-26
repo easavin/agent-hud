@@ -84,7 +84,23 @@ private func events(_ lines: [String]) -> [TranscriptEvent] {
         #expect(state.activity == .waiting)
         #expect(state.toolCounts == ["Bash": 1, "Edit": 1])
         #expect(state.ticker.map(\.kind) == [.running, .error, .editing, .responding])
-        #expect(state.lanes.map(\.kind) == [.running, .error, .editing, .thinking, .responding, .waiting])
+        // The wait for the next prompt is idle on the lanes, even though the agent reads as waiting.
+        #expect(state.lanes.map(\.kind) == [.running, .error, .editing, .thinking, .responding, .idle])
+
+        // An interrupted turn never ends; once the registry says idle, its segment stops at the last line.
+        let read = #"{"type":"tool_use","id":"t3","name":"Read","input":{"file_path":"/a"}}"#
+        state.apply(events([assistantLine(messageId: "m4", output: 5, block: read, timestamp: "2026-09-18T09:05:00.000Z")])[0])
+        let now = try! #require(state.lastEventAt).addingTimeInterval(600)
+        #expect(IngestEngine.lanes(state, busy: true, now: now).last?.end == nil)
+        #expect(IngestEngine.lanes(state, busy: false, now: now).last?.end == state.lastEventAt)
+    }
+
+    @Test func contextWindowFollowsModel() {
+        #expect(IngestEngine.contextWindow(model: "claude-opus-5-5", peak: 167_000) == 1_000_000)
+        #expect(IngestEngine.contextWindow(model: "claude-fable-5-1", peak: 0) == 1_000_000)
+        #expect(IngestEngine.contextWindow(model: "claude-haiku-4-5-20251001", peak: 90_000) == 200_000)
+        #expect(IngestEngine.contextWindow(model: "claude-sonnet-4-5[1m]", peak: 0) == 1_000_000)
+        #expect(IngestEngine.contextWindow(model: "claude-opus-4-1", peak: 250_000) == 1_000_000)
     }
 
     @Test func heartbeatBucketsOutputTokens() throws {

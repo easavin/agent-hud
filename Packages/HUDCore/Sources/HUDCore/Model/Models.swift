@@ -259,6 +259,6 @@ public struct AgentSnapshot: Sendable, Identifiable, Equatable {
     public static func == (a: AgentSnapshot, b: AgentSnapshot) -> Bool {
         a.sessionId == b.sessionId && a.activity == b.activity && a.usage == b.usage && a.heartbeat == b.heartbeat
             && a.steps == b.steps && a.ticker == b.ticker && a.plan == b.plan && a.loops == b.loops
-            && a.lanes.count == b.lanes.count && a.name == b.name && a.files == b.files && a.subagents == b.subagents && a.endedAt == b.endedAt
+            && a.lanes.count == b.lanes.count && a.lanes.last == b.lanes.last && a.name == b.name && a.files == b.files && a.subagents == b.subagents && a.endedAt == b.endedAt
     }
 }
