@@ -25,8 +25,8 @@ struct LanesPanel: View {
                 CardHeader(title: "Activity", suffix: range.title) {
                     Segmented(options: LaneRange.allCases.map { ($0.label, $0) }, selection: $range)
                 }
-                // A redraw a second keeps the lane scroll honest without costing anything.
-                TimelineView(.periodic(from: .now, by: reduceMotion ? 60 : 1)) { timeline in
+                // Redraw about once per point of scroll on a ~600pt track: 1.5 s at 15m, 36 s at 6h.
+                TimelineView(.periodic(from: .now, by: reduceMotion ? 60 : max(1, Double(range.rawValue) / 10))) { timeline in
                     Canvas { context, size in draw(&context, size: size, now: timeline.date) }
                 }
                 .padding(.leading, 8).padding(.trailing, 4).padding(.top, 4)

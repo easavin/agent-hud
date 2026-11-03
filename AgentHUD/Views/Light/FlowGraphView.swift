@@ -21,13 +21,15 @@ struct FlowGraphView: View {
         return ZStack(alignment: .topLeading) {
             // Static layer: edges, nodes, glyphs, labels, chips. Redrawn only when the turn changes.
             Canvas { context, _ in draw(layout, in: &context, selectedId: selected?.id) }
-            // Motion layer: particles down the live edge and the looping error ring.
-            if !staticRendering && !reduceMotion, needsMotion(layout) {
-                TimelineView(.periodic(from: .now, by: 1.0 / 15)) { timeline in
-                    Canvas { context, _ in drawMotion(layout, in: &context, at: timeline.date) }
+            // Motion layer: particles down the live edge and the looping error ring. Core Animation runs it
+            // out of process; a SwiftUI timeline here re-laid out the whole window 15 times a second.
+            let motion = motion(layout)
+            if !motion.isEmpty {
+                if !staticRendering && !reduceMotion {
+                    FlowMotionView(motion: motion)
+                } else {
+                    Canvas { context, _ in drawStill(motion, in: &context) }
                 }
-            } else {
-                Canvas { context, _ in drawMotion(layout, in: &context, at: .distantPast) }
             }
             if layout.nodes.isEmpty {
                 Text("Waiting for the first prompt")
@@ -43,10 +45,6 @@ struct FlowGraphView: View {
             selectedId = hit?.id == selectedId ? nil : hit?.id
         })
         .onChange(of: agent.id) { selectedId = nil }
-    }
-
-    private func needsMotion(_ layout: FlowLayout) -> Bool {
-        layout.nodes.contains { $0.isRunning } || !layout.loopEdges.isEmpty
     }
 
     /// The popover sits under the node, or above it when the node hangs low on the canvas.
@@ -179,25 +177,110 @@ struct FlowGraphView: View {
 
     // MARK: Motion layer
 
-    private func drawMotion(_ layout: FlowLayout, in context: inout GraphicsContext, at date: Date) {
-        let time = date == .distantPast ? 0 : date.timeIntervalSinceReferenceDate
-        // 3 dots, 1.6s down the edge, staggered by a third of a lap.
+    private func motion(_ layout: FlowLayout) -> FlowMotion {
+        var motion = FlowMotion()
         for edge in layout.edges where layout.nodes[edge.to].isRunning {
             let (start, end) = edgeEnds(edge, layout.nodes)
-            for dot in 0..<3 {
-                let progress = ((time / 1.6) + Double(dot) / 3).truncatingRemainder(dividingBy: 1)
-                let point = Geometry.onCurve(start, end, progress)
+            motion.edges.append(.init(start: start, end: end))
+        }
+        for loop in layout.loopEdges {
+            let node = layout.nodes[loop.from]
+            motion.rings.append(CGRect(x: node.center.x - node.radius, y: node.center.y - node.radius,
+                                       width: node.radius * 2, height: node.radius * 2))
+        }
+        return motion
+    }
+
+    /// The motion layer's first frame, for snapshots and Reduce Motion.
+    private func drawStill(_ motion: FlowMotion, in context: inout GraphicsContext) {
+        for edge in motion.edges {
+            for dot in 0..<FlowMotion.dots {
+                let point = Geometry.onCurve(edge.start, edge.end, Double(dot) / Double(FlowMotion.dots))
                 context.fill(Path(ellipseIn: CGRect(x: point.x - 2, y: point.y - 2, width: 4, height: 4)),
                              with: .color(Theme.running))
             }
         }
-        // While a loop is live the failed node's ring alternates every 800ms — no pulse, no glow.
-        for loop in layout.loopEdges {
-            let node = layout.nodes[loop.from]
-            let lit = time == 0 || Int(time / 0.8) % 2 == 0
-            let rect = CGRect(x: node.center.x - node.radius, y: node.center.y - node.radius,
-                              width: node.radius * 2, height: node.radius * 2)
-            context.stroke(Path(ellipseIn: rect), with: .color(lit ? Theme.error : Theme.errorPale), lineWidth: 2)
+        for ring in motion.rings {
+            context.stroke(Path(ellipseIn: ring), with: .color(Theme.error), lineWidth: 2)
+        }
+    }
+}
+
+/// What moves on the flow graph: dots down each edge into a running node, and the ring of a looping node.
+struct FlowMotion: Equatable {
+    struct Edge: Equatable { var start: CGPoint, end: CGPoint }
+    var edges: [Edge] = []
+    var rings: [CGRect] = []
+    var isEmpty: Bool { edges.isEmpty && rings.isEmpty }
+
+    /// 3 dots, 1.6s down the edge, staggered by a third of a lap. A loop's ring alternates every 800ms — no pulse, no glow.
+    static let dots = 3, lap: CFTimeInterval = 1.6
+}
+
+/// Hands the motion layer to Core Animation, which animates it without waking the app.
+private struct FlowMotionView: NSViewRepresentable {
+    let motion: FlowMotion
+
+    func makeNSView(context: Context) -> MotionView { MotionView() }
+    func updateNSView(_ view: MotionView, context: Context) { view.show(motion) }
+
+    final class MotionView: NSView {
+        private var shown: FlowMotion?
+
+        // Flipped, so sublayers share Canvas' top-left coordinates.
+        override var isFlipped: Bool { true }
+        // Taps belong to the graph underneath.
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+        override init(frame: NSRect) {
+            super.init(frame: frame)
+            wantsLayer = true
+        }
+
+        required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+
+        func show(_ motion: FlowMotion) {
+            // Rebuilding restarts the animations, so leave them alone unless the geometry moved.
+            guard motion != shown, let layer else { return }
+            shown = motion
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            layer.sublayers?.forEach { $0.removeFromSuperlayer() }
+            for edge in motion.edges {
+                let path = Geometry.link(edge.start, edge.end).cgPath
+                for dot in 0..<FlowMotion.dots {
+                    let particle = CALayer()
+                    particle.bounds = CGRect(x: 0, y: 0, width: 4, height: 4)
+                    particle.cornerRadius = 2
+                    particle.backgroundColor = NSColor(Theme.running).cgColor
+                    particle.position = edge.start
+                    let walk = CAKeyframeAnimation(keyPath: "position")
+                    walk.path = path
+                    walk.duration = FlowMotion.lap
+                    walk.timeOffset = FlowMotion.lap * Double(dot) / Double(FlowMotion.dots)
+                    walk.repeatCount = .infinity
+                    walk.isRemovedOnCompletion = false
+                    particle.add(walk, forKey: "walk")
+                    layer.addSublayer(particle)
+                }
+            }
+            for rect in motion.rings {
+                let ring = CAShapeLayer()
+                ring.path = CGPath(ellipseIn: rect, transform: nil)
+                ring.fillColor = nil
+                ring.lineWidth = 2
+                ring.strokeColor = NSColor(Theme.error).cgColor
+                let blink = CAKeyframeAnimation(keyPath: "strokeColor")
+                blink.values = [NSColor(Theme.error).cgColor, NSColor(Theme.errorPale).cgColor]
+                blink.keyTimes = [0, 0.5, 1]
+                blink.calculationMode = .discrete
+                blink.duration = FlowMotion.lap
+                blink.repeatCount = .infinity
+                blink.isRemovedOnCompletion = false
+                ring.add(blink, forKey: "blink")
+                layer.addSublayer(ring)
+            }
+            CATransaction.commit()
         }
     }
 }

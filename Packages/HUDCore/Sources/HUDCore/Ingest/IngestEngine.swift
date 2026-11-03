@@ -11,11 +11,25 @@ public actor IngestEngine {
         /// Last known registry entry; kept so an ended session can still be described.
         var entry: RegistryEntry?
         var endedAt: Date?
+        var cached: AgentSnapshot?
+        var cacheKey: SnapshotKey?
 
         init(url: URL) {
             tailer = TranscriptTailer(url: url)
             subagents = SubagentTracker(sessionTranscript: url)
         }
+    }
+
+    /// Everything a snapshot is built from. Building one is most of a poll's cost and most polls change
+    /// nothing, so a session is rebuilt only when one of these moves.
+    private struct SnapshotKey: Equatable {
+        var offset: UInt64
+        var entry: RegistryEntry?
+        var endedAt: Date?
+        var subagents: [SubagentInfo]
+        var lastScan: Date
+        /// Time moves heartbeat buckets for a live session; an ended one only ages out of the lanes.
+        var clock: Int
     }
 
     /// Walking a repo is cheap but not free; changes on disk do not need sub-second latency.
@@ -59,8 +73,9 @@ public actor IngestEngine {
         for id in tracked.keys {
             guard var session = tracked[id] else { continue }
             let isLive = session.endedAt == nil
-            var subagents: [SubagentInfo]?
-            if isLive || session.lastScan == .distantPast {
+            // An ended session is read once; after that only the clock changes it.
+            var subagents = session.cached?.subagents ?? []
+            if isLive || session.cached == nil {
                 for event in session.tailer.poll() { session.state.apply(event) }
                 subagents = session.subagents.poll()
             }
@@ -75,8 +90,19 @@ public actor IngestEngine {
                 session.diskChanges = DirectoryScanner.changedFiles(in: root, since: started, until: until)
                 session.lastScan = now
             }
-            var snapshot = Self.snapshot(id: id, session: &session, now: now)
-            snapshot.subagents = subagents ?? session.subagents.poll()
+            let key = SnapshotKey(offset: session.tailer.offset, entry: session.entry, endedAt: session.endedAt,
+                                  subagents: subagents, lastScan: session.lastScan,
+                                  clock: isLive ? SessionState.bucket(for: now) : Int(now.timeIntervalSince1970 / 60))
+            let snapshot: AgentSnapshot
+            if let cached = session.cached, session.cacheKey == key {
+                snapshot = cached
+            } else {
+                var fresh = Self.snapshot(id: id, session: &session, now: now)
+                fresh.subagents = subagents
+                session.cached = fresh
+                session.cacheKey = key
+                snapshot = fresh
+            }
             tracked[id] = session
             if isLive {
                 // A working agent ranks by the prompt that started its turn, so it does not jump
