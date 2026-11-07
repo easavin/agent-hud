@@ -5,6 +5,8 @@ import SwiftUI
 struct AgentCard: View {
     let agent: AgentSnapshot
     let selected: Bool
+    /// Brings the session's terminal forward. Nil for ended and demo sessions, which have none.
+    var onShowTerminal: (() -> Void)?
     static let height: CGFloat = 112
 
     var body: some View {
@@ -17,6 +19,16 @@ struct AgentCard: View {
                     Text(agent.repo).font(Theme.ui(14, .semibold)).foregroundStyle(Theme.ink)
                         .lineLimit(1).truncationMode(.middle)
                     Spacer(minLength: 6)
+                    if let onShowTerminal {
+                        Button(action: onShowTerminal) {
+                            Image(systemName: "terminal").font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(Theme.mute)
+                                .frame(width: 22, height: 18)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Show in terminal (t)")
+                    }
                     ModelBadge(model: agent.model)
                 }
                 HStack(spacing: 6) {

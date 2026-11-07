@@ -194,9 +194,13 @@ struct DashboardView: View {
         let below = max(0, rows.count - start - visible)
         return VStack(spacing: 8) {
             ForEach(Array(rows.dropFirst(start).prefix(visible))) { agent in
-                AgentCard(agent: agent, selected: agent.id == monitor.selected?.id)
+                let showTerminal = terminalAction(agent)
+                AgentCard(agent: agent, selected: agent.id == monitor.selected?.id, onShowTerminal: showTerminal)
                     .contentShape(Rectangle())
                     .onTapGesture { monitor.selectedId = agent.id }
+                    .contextMenu {
+                        if let showTerminal { Button("Show in Terminal", action: showTerminal) }
+                    }
             }
             if rows.isEmpty {
                 Card {
@@ -228,6 +232,12 @@ struct DashboardView: View {
                   let index = self.rows.firstIndex(where: { $0.id == fresh }) else { return }
             revealInRail(index)
         }
+    }
+
+    /// Live sessions only: an ended one has no terminal, and the demo fleet's pids are made up.
+    private func terminalAction(_ agent: AgentSnapshot) -> (() -> Void)? {
+        guard !agent.isEnded, agent.pid > 1, monitor.demo == nil else { return nil }
+        return { TerminalFocus.show(pid: agent.pid) }
     }
 
     private func scrollRail(by delta: Int, _ count: Int) {
@@ -299,6 +309,9 @@ struct DashboardView: View {
             guard let character = press.characters.first else { return .ignored }
             if let tab = HeroTab.allCases.first(where: { $0.key == character }) {
                 heroTab = tab
+            } else if character == "t" {
+                guard let agent = monitor.selected, let show = terminalAction(agent) else { return .ignored }
+                show()
             } else if character == "p" {
                 blurThoughts.toggle()
             } else if let range = BurnRange.allCases.first(where: { $0.rawValue.first == character }) {

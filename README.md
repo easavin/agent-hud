@@ -8,7 +8,8 @@ and which ones are stuck in a loop.
 
 It reads `~/.claude/sessions/*.json` and `~/.claude/projects/**/*.jsonl` and nothing else. **Strictly
 local, read-only, no network, no API keys** — the app makes no outbound connections of any kind and
-never writes into `~/.claude`. Its only output is a cache of its own in Application Support.
+never writes into `~/.claude`. Its only output is a cache of its own in Application Support. The one
+thing it does outside itself is bring a session's terminal to the front when you ask it to.
 
 ## Requirements
 
@@ -85,8 +86,9 @@ history plus current tok/min.
 | Hide the widget | Its red light. The menu bar icon brings it back |
 | Quit | **⌘Q**. Closing the dashboard alone leaves the widget running |
 
-Inside the dashboard: `↑ ↓` select a session · `f` `b` `l` `s` switch the hero tab · `p` blurs the
-thought stream for screen-sharing · `1` `2` `7` set the token-burn range. Clicking a node in the flow
+Inside the dashboard: `↑ ↓` select a session · `t` brings its terminal to the front · `f` `b` `l` `s`
+switch the hero tab · `p` blurs the thought stream for screen-sharing · `1` `2` `7` set the token-burn
+range. The terminal icon on a session card, or right-click → Show in Terminal, does the same as `t`. Clicking a node in the flow
 graph opens its detail popover.
 
 Every border between panes is draggable — the rail, the stats column, the flow/lanes split, the
@@ -116,6 +118,12 @@ nothing scales, the layout reflows.
 - **Cost** is an API list-price equivalent (`CostEstimator.prices`), not what a subscription bills you.
 - The history index caches to `~/Library/Application Support/AgentHUD/index.json` — token totals,
   tool and repo names, no prompt text. Delete it to force a re-scan (~7s for 330 MB of transcripts).
+- **Show in Terminal** finds the session's terminal from its process tree. In Terminal.app and iTerm2
+  it selects the exact tab; inside tmux it also selects the pane and switches the most recently used
+  client to that session (a detached tmux session has no window to show, so you get a beep). Any
+  other terminal, or an editor's built-in one, is just brought forward. The first time, macOS asks
+  whether Agent HUD may control Terminal or iTerm2; without that it still brings the app forward but
+  can't pick the tab.
 - There is no **Interrupt** button, though the design handoff drew one: the app is read-only and has
   no business killing someone's session.
 
@@ -138,8 +146,9 @@ use **JetBrains Mono**, falling back to SF Mono. Neither font is bundled.
 
 - **`Packages/HUDCore`** — all the logic, no UI, unit-tested with `swift test`: transcript parsing,
   incremental tailing, per-session state (activity, turn steps, loops, plan progress, context
-  "brain"), the history index and cost estimate. `swift run hudctl [stats]` prints what the HUD sees,
-  which is the fastest way to check ingest without launching the app.
+  "brain"), the history index, the cost estimate and finding the terminal a session runs in.
+  `swift run hudctl [stats]` prints what the HUD sees, which is the fastest way to check ingest
+  without launching the app.
 - **`AgentHUD/Views/Light/`** — the entire interface.
   - `Theme.swift` — design tokens, type, radii. `Components.swift` — `Card`, `CardHeader`,
     `Segmented`, `ToolbarButton`, `ModelBadge`, `BarTrack`, `Sparkline`, `ProgressRing`.

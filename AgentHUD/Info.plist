@@ -24,6 +24,8 @@
 	<string>1</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.developer-tools</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Agent HUD selects the Terminal or iTerm2 tab a session is running in when you ask it to show that session's terminal.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Local, read-only monitor for Claude Code sessions.</string>
 </dict>
